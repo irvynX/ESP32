@@ -27,7 +27,7 @@ WiFiServer servidor(80);
 
 // globales
 // numero de leds
-int numLeds = 30;
+const int numLeds = 30;
 // tira gabinete
 int tira1 = 18;
 // tira escritorio
@@ -50,19 +50,15 @@ int boton5 = 12;
 int boton6 = 13;
 // Definir el número de pin del botón táctil
 int boton7 = 15;
-// nombre de la red
-String nombreRed = "Totalplay-2DA1-2";
-// contraseña de la red
-String contraRed = "irvyn2703";
 
-//variables para las tiras led
-//cada estado indica el efecto
-//      0 = apagado
-//      1 = encendido
-//      2 = musica
-//      3 = musica 2
-//      4 = recorrer tira
-//      5 = encender y apagar
+// variables para las tiras led
+// cada estado indica el efecto
+//       0 = apagado
+//       1 = encendido
+//       2 = musica
+//       3 = musica 2
+//       4 = recorrer tira
+//       5 = encender y apagar
 int estadoG = 0;
 int estadoE = 0;
 int encenderG = 1;
@@ -77,14 +73,15 @@ int verdeE = 0;
 int azulE = 0;
 int brilloE = 255;
 
-//variables para el rele
+// variables para el rele
 int estadoRele = 0;
-//variables para efectode musica 1
+// variables para efectode musica 1
+int encenderLeds = 0;
 int tiempoActualMusica = 0;
 int tiempoPrevioMusica = 0;
 int intervaloMusica = 50;
-//variables para suspender
-
+int luces[numLeds];
+// variables para suspender
 
 /*#include <esp_sleep.h>
 
@@ -117,12 +114,13 @@ Adafruit_NeoPixel pixelsG(numLeds, tira1, NEO_GRB + NEO_KHZ800);
 // escritorio
 Adafruit_NeoPixel pixelsE(numLeds, tira2, NEO_GRB + NEO_KHZ800);
 
-void setup() {
+void setup()
+{
   // wifi
   Serial.begin(115200);
   Serial.println("\nIniciando Wifi");
 
-  wifiMulti.addAP(nombreRed,contraRed);
+  wifiMulti.addAP("Totalplay-2DA1-2", "irvyn2703");
 
   WiFi.mode(WIFI_STA);
   Serial.print("Conectando a Wifi ..");
@@ -157,7 +155,130 @@ void setup() {
   pixelsE.show();
 }
 
-void loop() {
+// metodos simples --------------------------------------------
+void encedeApagarTiraG()
+{
+  if (encenderG == 1)
+  {
+    encenderG = 0;
+  }
+  else
+  {
+    encenderG = 1;
+  }
+}
+
+void encedeApagarTiraE()
+{
+  if (encenderE == 1)
+  {
+    encenderE = 0;
+  }
+  else
+  {
+    encenderE = 1;
+  }
+}
+
+void encedeApagarFoco()
+{
+  if (estadoRele == 1)
+  {
+    estadoRele = 0;
+  }
+  else
+  {
+    estadoRele = 1;
+  }
+}
+
+void cambiarEfectoG()
+{
+  estadoG++;
+  if (estadoG > 4)
+  {
+    estadoG = 0;
+  }
+}
+
+void cambiarEfectoE()
+{
+  estadoE++;
+  if (estadoE > 4)
+  {
+    estadoE = 0;
+  }
+}
+
+int leerMicro()
+{
+  // Leer el nivel de audio desde el micrófono
+  int nivelAudio = analogRead(microfono);
+
+  // Convertir el nivel de audio en la cantidad de LED que se deben encender
+  int cantidadLEDs = map(nivelAudio, 0, 1023, 0, numLeds);
+  Serial.println("microfono: " + cantidadLEDs);
+
+  return cantidadLEDs;
+}
+
+//-----------------------------------metodos de los efectos --------------------------------
+
+//-----------------------------------efecto Musica -----------------------------------------
+void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
+{
+  tiempoActualMusica = millis();
+  if (tiempoActualMusica - tiempoPrevioMusica >= intervaloMusica){
+    encenderLeds = leerMicro();
+    for (int i = 0; i < (numLeds - 1); i++)
+    {
+      luces[i + 1] = luces[i];
+    }
+    luces[0] = encenderLeds;
+  }
+  if (num == 1)
+  {
+    // tiraG efecto 1
+    miPixels.fill(miPixels.Color(rojoG, verdeG, azulG), 0, encenderLeds);
+    miPixels.fill(miPixels.Color(0, 0, 0), encenderLeds, numLeds);
+    miPixels.show();
+  }
+  if (num == 2)
+  {
+    // tiraG efecto 2
+    for (int i = 0; i < (numLeds - 1); i++)
+    {
+      miPixels.setPixelColor((i + 1), map(luces[i + 1], 0, 30, 0, rojoG), map(luces[i + 1], 0, 30, 0, verdeG), map(luces[i + 1], 0, 30, 0, azulG));
+    }
+    miPixels.setPixelColor((0), map(luces[0], 0, 30, 0, rojoG), map(luces[0], 0, 30, 0, verdeG), map(luces[0], 0, 30, 0, azulG));
+    miPixels.show();
+  }
+  if (num == 3)
+  {
+    // tiraE efecto 1
+    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), numLeds / 2, (numLeds / 2) + (encenderLeds / 2));
+    miPixels.fill(miPixels.Color(0, 0, 0), (numLeds / 2) + (encenderLeds / 2), numLeds);
+    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), (numLeds / 2) - (encenderLeds / 2), numLeds / 2);
+    miPixels.fill(miPixels.Color(0, 0, 0), 0, (numLeds / 2) - (encenderLeds / 2));
+    miPixels.show();
+  }
+  if (num == 4)
+  {
+    // tiraE efecto 2
+    for (int i = 0; i < (numLeds - 1); i++)
+    {
+      miPixels.setPixelColor((i + 1), map(luces[i + 1], 0, 30, 0, rojoE), map(luces[i + 1], 0, 30, 0, verdeE), map(luces[i + 1], 0, 30, 0, azulE));
+    }
+    miPixels.setPixelColor((0), map(luces[0], 0, 30, 0, rojoE), map(luces[0], 0, 30, 0, verdeE), map(luces[0], 0, 30, 0, azulE));
+    miPixels.show();
+  }
+}
+//-----------------------------------efecto llenar tira -----------------------------------------
+
+//------------------------------------------loop----------------------------------
+
+void loop()
+{
   WiFiClient cliente = servidor.available();
   // usuario en la pagina web
   if (cliente)
@@ -199,66 +320,84 @@ void loop() {
   }
 
   // no hay usuarios en la red
-  //tira gabinete
-  if (encenderG == 0){
+  // tira gabinete
+  if (encenderG == 0)
+  {
     pixelsG.clear();
     pixelsG.show();
-  }else if (estadoG == 0 && encenderG == 1){
+  }
+  else if (estadoG == 0 && encenderG == 1)
+  {
     pixelsG.fill(pixelsG.Color(rojoG, verdeG, azulG), 0, numLeds);
     pixelsG.setBrightness(brilloG);
     pixelsG.show();
-  }else if (estadoG == 1 && encenderG == 1){
+  }
+  else if (estadoG == 1 && encenderG == 1)
+  {
     // metodo de musica
     pixelsG.setBrightness(brilloG);
-    efectoMusica(pixelsG,1); // <------------------------ falta
-  }else if (estadoG == 2 && encenderG == 1)
+    efectoMusica(pixelsG, 1); // <------------------------ falta
+  }
+  else if (estadoG == 2 && encenderG == 1)
   {
     // metodo llenar tira leds
     pixelsG.setBrightness(brilloG);
-    efectoMusica(pixelsG,2);
-  }else if (estadoG == 3 && encenderG == 1)
+    efectoMusica(pixelsG, 2);
+  }
+  else if (estadoG == 3 && encenderG == 1)
   {
     // metodo llenar tira leds
     pixelsG.setBrightness(brilloG);
     llenarTira(pixelsG);
-  }else if (estadoG == 4 && encenderG == 1)
+  }
+  else if (estadoG == 4 && encenderG == 1)
   {
     // encender y apagar
     repirar(pixelsG);
   }
-  
-  //tira escritorio
-  if (encenderE == 0){
+
+  // tira escritorio
+  if (encenderE == 0)
+  {
     pixelsE.clear();
     pixelsE.show();
-  }else if (estadoE == 0 && encenderE == 1){
+  }
+  else if (estadoE == 0 && encenderE == 1)
+  {
     pixelsE.fill(pixelsE.Color(rojoE, verdeE, azulE), 0, numLeds);
     pixelsE.setBrightness(brilloE);
     pixelsE.show();
-  }else if (estadoE == 1 && encenderE == 1){
+  }
+  else if (estadoE == 1 && encenderE == 1)
+  {
     // metodo de musica
     pixelsE.setBrightness(brilloE);
-    efectoMusica(pixelsE,3); // <------------------------ falta
-  }else if (estadoE == 2 && encenderE == 1)
+    efectoMusica(pixelsE, 3); // <------------------------ falta
+  }
+  else if (estadoE == 2 && encenderE == 1)
   {
     // metodo llenar tira leds
     pixelsE.setBrightness(brilloE);
-    efectoMusica(pixelsE,4);
-  }else if (estadoE == 3 && encenderE == 1)
+    efectoMusica(pixelsE, 4);
+  }
+  else if (estadoE == 3 && encenderE == 1)
   {
     // metodo llenar tira leds
     pixelsE.setBrightness(brilloE);
     llenarTira(pixelsE);
-  }else if (estadoE == 4 && encenderE == 1)
+  }
+  else if (estadoE == 4 && encenderE == 1)
   {
     // encender y apagar
     repirar(pixelsE);
   }
 
   // rele
-  if (estadoRele == 0){
+  if (estadoRele == 0)
+  {
     digitalWrite(rele, LOW);
-  }else
+  }
+  else
   {
     digitalWrite(rele, HIGH);
   }
@@ -273,37 +412,43 @@ void loop() {
   int botonEstado7 = digitalRead(boton7); // encender todo
 
   // realizar acciones en función del estado de los botones
-  if (botonEstado1 == HIGH) {
+  if (botonEstado1 == HIGH)
+  {
     encedeApagarTiraG();
     Serial.println("Botón táctil tocado!");
     delay(500);
   }
 
-  if (botonEstado2 == HIGH) {
+  if (botonEstado2 == HIGH)
+  {
     encedeApagarTiraE();
     Serial.println("Botón táctil tocado!");
     delay(500);
   }
 
-  if (botonEstado3 == HIGH) {
+  if (botonEstado3 == HIGH)
+  {
     encedeApagarFoco();
     Serial.println("Botón táctil tocado!");
     delay(500);
   }
 
-  if (botonEstado4 == HIGH) {
+  if (botonEstado4 == HIGH)
+  {
     cambiarEfectoG();
     Serial.println("Botón táctil tocado!");
     delay(500);
   }
 
-  if (botonEstado5 == HIGH) {
+  if (botonEstado5 == HIGH)
+  {
     cambiarEfectoE();
     Serial.println("Botón táctil tocado!");
     delay(500);
   }
 
-  if (botonEstado6 == HIGH) {
+  if (botonEstado6 == HIGH)
+  {
     encenderG = 0;
     encenderE = 0;
     estadoRele = 0;
@@ -311,91 +456,12 @@ void loop() {
     delay(500);
   }
 
-  if (botonEstado7 == HIGH) {
+  if (botonEstado7 == HIGH)
+  {
     encenderG = 1;
     encenderE = 1;
     estadoRele = 1;
     Serial.println("Botón táctil tocado!");
     delay(500);
-  }
-}
-
-// metodos simples --------------------------------------------
-void encedeApagarTiraG(){
-  if (encenderG == 1)
-  {
-    encenderG = 0;
-  }else{
-    encenderG = 1;
-  }
-}
-
-void encedeApagarTiraE(){
-  if (encenderE == 1)
-  {
-    encenderE = 0;
-  }else{
-    encenderE = 1;
-  }
-}
-
-void encedeApagarFoco(){
-  if (estadoRele == 1)
-  {
-    estadoRele = 0;
-  }else{
-    estadoRele = 1;
-  }
-}
-
-void cambiarEfectoG(){
-  estadoG++;
-  if (estadoG > 4)
-  {
-    estadoG = 0;
-  } 
-}
-
-void cambiarEfectoE(){
-  estadoE++;
-  if (estadoE > 4)
-  {
-    estadoE = 0;
-  } 
-}
-
-int leerMicro(){
-  // Leer el nivel de audio desde el micrófono
-  int nivelAudio = analogRead(microfono);
-
-  // Convertir el nivel de audio en la cantidad de LED que se deben encender
-  int cantidadLEDs = map(nivelAudio, 0, 1023, 0, numLeds);
-  Serial.println("microfono: " + cantidadLEDs);
-
-  return cantidadLEDs;
-}
-//-----------------------------------metodos de los efectos --------------------------------
-void efectoMusica(Adafruit_NeoPixel &miPixels,int num){
-  tiempoActualMusica = millis();
-  if (tiempoActualMusica - tiempoPrevioMusica >= intervaloMusica){
-    int encenderLeds = leerMicro();
-    if (num == 1)
-    {
-      //tiraG efecto 1
-      miPixels.fill(pixels.Color(rojoG, verdeG, azulG), 0, encenderLeds);
-      miPixels.fill(pixels.Color(0,0,0), encenderLeds, numLeds);
-    }
-    if (num == 2)
-    {
-      //tiraG efecto 2
-    }
-    if (num == 3)
-    {
-      //tiraE efecto 1
-    }
-    if (num == 2)
-    {
-      //tiraE efecto 2
-    }
   }
 }
