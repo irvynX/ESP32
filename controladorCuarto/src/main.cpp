@@ -81,8 +81,17 @@ int tiempoActualMusica = 0;
 int tiempoPrevioMusica = 0;
 int intervaloMusica = 50;
 int luces[numLeds];
-// variables para suspender
-
+// variables para llenar tira
+int tiempoActualLlenar = 0;
+int tiempoPrevioLlenar = 0;
+int intervaloLlenar = 50;
+int ledLlenar = 0;
+// variables para respirar
+int tiempoActualRes = 0;
+int tiempoPrevioRes = 0;
+int intervaloRes = 10;
+int brillo = 0;
+bool respirar = true;
 /*#include <esp_sleep.h>
 
 // Definir el número de pin del botón táctil
@@ -235,6 +244,8 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
       luces[i + 1] = luces[i];
     }
     luces[0] = encenderLeds;
+
+    tiempoPrevioMusica = millis();
   }
   if (num == 1)
   {
@@ -274,11 +285,83 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
   }
 }
 //-----------------------------------efecto llenar tira -----------------------------------------
+void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
+  tiempoActualLlenar = millis();
+  if (tiempoActualLlenar - tiempoPrevioLlenar >= intervaloLlenar){
+    if(estadoG == 3){
+      miPixelsG.setPixelColor(ledLlenar - 3, rojoG/8, verdeG/8, azulG/8);
+      miPixelsG.setPixelColor(ledLlenar - 2, rojoG/4, verdeG/4, azulG/4);
+      miPixelsG.setPixelColor(ledLlenar - 1, rojoG/2, verdeG/2, azulG/2);
+      miPixelsG.setPixelColor(ledLlenar, rojoG, verdeG, azulG);
+      miPixelsG.show();
+    }
+    if(estadoE == 3){
+      miPixelsE.setPixelColor(ledLlenar - 3, rojoE/8, verdeE/8, azulE/8);
+      miPixelsE.setPixelColor(ledLlenar - 2, rojoE/4, verdeE/4, azulE/4);
+      miPixelsE.setPixelColor(ledLlenar - 1, rojoE/2, verdeE/2, azulE/2);
+      miPixelsE.setPixelColor(ledLlenar, rojoG, verdeG, azulG);
+      miPixelsE.show();
+    }
+    ledLlenar++;
+    if (ledLlenar > numLeds)
+    {
+      ledLlenar = 0;
+    }
+    tiempoPrevioLlenar = millis();
+  }
+}
+
+//-----------------------------------efecto llenar tira -----------------------------------------
+void repirar(){
+  if (tiempoActualRes - tiempoPrevioRes >= intervaloRes)
+  {
+    if (estadoG == 4)
+    {
+      pixelsG.setBrightness(brillo);
+      pixelsG.show();
+    }
+    if (estadoE == 4)
+    {
+      pixelsE.setBrightness(brillo);
+      pixelsE.show();
+    }
+    if (respirar == true)
+    {
+      brillo++;
+      if (brillo > 255)
+      {
+        respirar = false;
+      }
+    }
+    else
+    {
+      brillo--;
+      if (brillo < 1)
+      {
+        respirar = true;
+      }
+    }
+  }
+}
+
+//----------------------------------- metodos para resporder y leer el cliente -------------------
+//----------------------------------- metodo para enviar la pagina al cliente -------------------
+void ResponderCliente(WiFiClient &cliente)
+{
+  // pagina en html a enviar
+}
+
+//---------------------------------- verificacion de los mensajes ---------------------------
+void VerificarMensaje(String Mensaje)
+{
+  int mensaje;
+  if (Mensaje.indexOf("GET /") >= 0){
+  }
+}
 
 //------------------------------------------loop----------------------------------
 
-void loop()
-{
+void loop(){
   WiFiClient cliente = servidor.available();
   // usuario en la pagina web
   if (cliente)
@@ -348,12 +431,12 @@ void loop()
   {
     // metodo llenar tira leds
     pixelsG.setBrightness(brilloG);
-    llenarTira(pixelsG);
+    llenarTira(pixelsG,pixelsE);
   }
   else if (estadoG == 4 && encenderG == 1)
   {
     // encender y apagar
-    repirar(pixelsG);
+    repirar();
   }
 
   // tira escritorio
@@ -384,12 +467,12 @@ void loop()
   {
     // metodo llenar tira leds
     pixelsE.setBrightness(brilloE);
-    llenarTira(pixelsE);
+    llenarTira(pixelsG,pixelsE);
   }
   else if (estadoE == 4 && encenderE == 1)
   {
     // encender y apagar
-    repirar(pixelsE);
+    repirar();
   }
 
   // rele
