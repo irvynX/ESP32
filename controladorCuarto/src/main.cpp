@@ -17,6 +17,201 @@ ESP8266WiFiMulti wifiMulti;
 
 #include <HTTPClient.h>
 
+const String pagina1 = R"====(HTTP/1.1 200 OK
+Content-Type: text/html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <title>APP-CUARTO</title>
+</head>
+<body class="bg-dark text-bg-dark">
+    <div class="row">
+        <div class="col-12">
+            <div class="p-3">
+                <form action="" method="get" class="text-center">
+                    <div>
+                        <h1> FOCO </h1>
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="foco" value="1" id="btnradio1" autocomplete="off" )====";
+// ------------------------------- si el foco esta encendido agregamos un checked 
+const String pagina2 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio1">ON</label>
+                          
+                            <input type="radio" class="btn-check" name="foco" value="0" id="btnradio2" autocomplete="off" )====";
+// -------------------------------- si el foco esta apagado agregamos un checked
+const String pagina3 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio2">OFF</label>
+                        </div>
+                        <br>
+                        <br>
+                        <br>
+                        <input type="submit" value="enviar" class="btn btn-outline-info">
+                    </div>
+                </form>
+                <br>
+                <HR>
+                <form action="" method="get" class="text-center">
+                    <div>
+                        <h1> TIRA LED ESCRITORIO </h1>
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="tiraE" value="1" id="btnradi" autocomplete="off" )====";
+// ------------------------------- si la tira led escritorio esta encendida agregamos un checked
+const String pagina4 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradi">ON</label>
+                          
+                            <input type="radio" class="btn-check" name="tiraE" value="0" id="btnrad" autocomplete="off" )====";
+// ------------------------------ si la tira led escritorio esta apagada agregamos un checked
+const String pagina5 = R"====(>
+                            <label class="btn btn-outline-light" for="btnrad">OFF</label>
+                        </div>
+                        <br>
+                        <br>
+                        <br>
+                        <h3> EFECTO </h3>
+                        <div class="btn-group-vertical mb-4" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="efecto" value="0" id="btnradio3" autocomplete="off" )====";
+// ------------------------------ si el efecto es el o agregamos un checked
+const String pagina6 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio3">ENCENDIDAS</label>
+                          
+                            <input type="radio" class="btn-check" name="efecto" value="1" id="btnradio4" autocomplete="off" )====";
+// ------------------------------ si el efecto es el 1 agregamos un checked
+const String pagina7 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio4">MUSICA 1</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="2" id="btnradio5" autocomplete="off" )====";
+// ------------------------------ si el efecto es el 2 agregamos un checked
+const String pagina8 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio5">MUSICA 2</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="3" id="btnradio6" autocomplete="off" )====";
+// ------------------------------ si el efecto es el 3 agregamos un checked
+const String pagina9 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio6">RECORRER TIRA</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="4" id="btnradio7" autocomplete="off" )====";
+// ------------------------------ si el efecto es el 4 agregamos un checked
+const String pagina10 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio7">RESPIRAR</label>
+                        </div>
+                        <div class="mb-4 align-content-center">
+                            <h3>COLOR</h3>
+                            <input type="color" class="form-control form-control-color m-auto" value=")====";
+// ------------------------------- ingresamos el valor en hexadecimal de la tira led
+const String pagina11 = R"====(" title="Choose your color" name="color">
+                        </div>
+                        <br>
+                        <br>
+                        <h3>BRILLO</h3>
+                        <div class="mb-4">
+                            <input type="range" class="form-range w-50 p-3" min="0" max="255" step="5" id="customRange3" name="brillo" value=")====";
+// ------------------------------ ingresamos el brillo de nuestra tira led en un rango de 0 a 255
+const String pagina12 = R"====(">
+                        </div>
+                        <br>
+                        <input type="submit" value="enviar" class="btn btn-outline-info">
+                    </div>
+                </form>
+                <br>
+                <HR>
+                <form action="" method="get" class="text-center">
+                    <div>
+                        <h1> TIRA LED GABINETE </h1>
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="tiraG" value="1" id="G" autocomplete="off" )====";
+// ---------------------------- si la tira gabinete esta encendida agregamos checked
+const String pagina13 = R"====(>
+                            <label class="btn btn-outline-light" for="G">ON</label>
+                          
+                            <input type="radio" class="btn-check" name="tiraG" value="0" id="G1" autocomplete="off" )====";
+// --------------------------- si la tira gabinete esta apagada agregamos checked
+const String pagina14 = R"====(>
+                            <label class="btn btn-outline-light" for="G1">OFF</label>
+                        </div>
+                        <br>
+                        <br>
+                        <br>
+                        <h3> EFECTO </h3>
+                        <div class="btn-group-vertical mb-4" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="efecto" value="0" id="btnradio8" autocomplete="off" )====";
+// -------------------------- si el efecto es 0 agregamos checked
+const String pagina15 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio8">ENCENDIDAS</label>
+                          
+                            <input type="radio" class="btn-check" name="efecto" value="1" id="btnradio9" autocomplete="off" )====";
+// ------------------------- si el efecto es 1 agregamos checked
+const String pagina16 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio9">MUSICA 1</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="2" id="btnradio10" autocomplete="off" )====";
+// -------------------------- si el efecto es 2 agregamos checked
+const String pagina17 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio10">MUSICA 2</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="3" id="btnradio11" autocomplete="off" )====";
+// -------------------------- si el efcto es 3 agregamos checked
+const String pagina18 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio11">RECORRER TIRA</label>
+
+                            <input type="radio" class="btn-check" name="efecto" value="4" id="btnradio12" autocomplete="off" )====";
+// -------------------------- si el efcto es 4 agregamos checked
+const String pagina19 = R"====(>
+                            <label class="btn btn-outline-light" for="btnradio12">RESPIRAR</label>
+                        </div>
+                        <div class="mb-4">
+                            <h3>COLOR</h3>
+                            <input type="color" class="form-control form-control-color m-auto" value=")====";
+// -------------------------- valor en hexadecimal del color
+const String pagina20 = R"====(" title="Choose your color" name="color">
+                        </div>
+                        <br>
+                        <br>
+                        <h3>BRILLO</h3>
+                        <div class="mb-4">
+                            <input type="range" class="form-range w-50 p-3" min="0" max="255" step="5" id="customRange3" name="brillo" value=")====";
+// -------------------------- brillo de la tira led
+const String pagina21 = R"====(">
+                        </div>
+                        <br>
+                        <input type="submit" value="enviar" class="btn btn-outline-info">
+                    </div>
+                </form>
+                <br>
+                <HR>
+                <form action="" method="get" class="text-center">
+                    <h1> MICROFONO Y HORA </h1>
+                    <div class="mb-4">
+                        <h3>MULTIPLICADOR DEL MICROFONO</h3>
+                        <input type="number" class="form-control w-25 m-auto" name="micro" value=")====";
+// -------------------------- multiplicador del mucrofono
+const String pagina22 = R"====(">
+                    </div>
+                    <div class="mb-4">
+                        <h3>AUMENTAR O DISMINUIR</h3>
+                        <div class="w-25 m-auto">
+                            <div class="input-group mb-3">
+                                <input type="number" class="form-control w-50 m-auto" placeholder="HH"  name="hora" min="-24" max="24" value=")====";
+// -------------------------- hora que se va a sumar o restar al reloj
+const String pagina23 = R"====(">
+                                <input type="number" class="form-control w-50 m-auto" placeholder="MM" name="minuto" min="-60" max="60" value=")====";
+// ------------------------- minutos que se va a sumar o restar al reloj
+const String pagina24 = R"====(">
+                            </div>                          
+                        </div>
+                    </div>
+                    <br>
+                    <input type="submit" value="enviar" class="btn btn-outline-info">
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>)====";
+
 const uint32_t TiempoEsperaWifi = 5000;
 
 unsigned long TiempoActual = 0;
@@ -73,6 +268,9 @@ int verdeE = 0;
 int azulE = 0;
 int brilloE = 255;
 
+// sencibilidaddel microfono
+int mulMicrofono = 0;
+
 // variables para el rele
 int estadoRele = 0;
 // variables para efectode musica 1
@@ -92,27 +290,11 @@ int tiempoPrevioRes = 0;
 int intervaloRes = 10;
 int brillo = 0;
 bool respirar = true;
-/*#include <esp_sleep.h>
-
-// Definir el número de pin del botón táctil
-const int BUTTON_PIN = 14;
-
-void setup() {
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  // Configurar el botón táctil para generar una interrupción cuando se presiona
-  attachInterrupt(BUTTON_PIN, buttonInterrupt, FALLING);
-}
-
-void loop() {
-  // Configurar la ESP32 para entrar en modo de sueño profundo
-  esp_sleep_enable_touchpad_wakeup();
-  esp_deep_sleep_start();
-}
-
-void buttonInterrupt() {
-  // Código para manejar la interrupción del botón táctil
-}
-*/
+// variables de la pagina
+String valorHexa = "#FF0000";
+int rojoTemp = 255;
+int verdeTemp = 0;
+int azulTemp = 0;
 
 // pratiras led
 #include <Adafruit_NeoPixel.h>
@@ -219,10 +401,18 @@ void cambiarEfectoE()
   }
 }
 
+void encenderRele(){
+  digitalWrite(rele, LOW);
+}
+
+void apagarRele(){
+  digitalWrite(rele, LOW);
+}
+
 int leerMicro()
 {
   // Leer el nivel de audio desde el micrófono
-  int nivelAudio = analogRead(microfono);
+  int nivelAudio = analogRead(microfono) * mulMicrofono;
 
   // Convertir el nivel de audio en la cantidad de LED que se deben encender
   int cantidadLEDs = map(nivelAudio, 0, 1023, 0, numLeds);
@@ -231,6 +421,30 @@ int leerMicro()
   return cantidadLEDs;
 }
 
+void hexaRGB (String valor){
+  String hexColor = "#"; // valor hexadecimal
+  hexColor = hexColor + valor;
+  long number = (long) strtol(&hexColor[1], NULL, 16); // Convertir hexadecimal a decimal
+  int r = (number >> 16) & 255; // Obtener valor de rojo
+  int g = (number >> 8) & 255; // Obtener valor de verde
+  int b = number & 255; // Obtener valor de azul
+
+  Serial.print(r); // Imprimir valor de rojo en la consola serie
+  Serial.print(",");
+  Serial.print(g); // Imprimir valor de verde en la consola serie
+  Serial.print(",");
+  Serial.println(b); // Imprimir valor de azul en la consola serie
+
+  rojoTemp = r;
+  verdeTemp = g;
+  azulTemp = b;
+}
+
+void RGBhexa (int r, int g, int b){
+  String hexColor = String(r, HEX) + String(g, HEX) + String(b, HEX); // Convertir RGB a hexadecimal
+  Serial.println(hexColor); // Imprimir valor hexadecimal en la consola serie
+  valorHexa = "#" + hexColor;
+}
 //-----------------------------------metodos de los efectos --------------------------------
 
 //-----------------------------------efecto Musica -----------------------------------------
@@ -346,9 +560,62 @@ void repirar(){
 
 //----------------------------------- metodos para resporder y leer el cliente -------------------
 //----------------------------------- metodo para enviar la pagina al cliente -------------------
-void ResponderCliente(WiFiClient &cliente)
-{
-  // pagina en html a enviar
+void ResponderCliente(WiFiClient &cliente){
+  cliente.print(pagina1);
+  if(estadoRele == 1){
+    cliente.print("checked");
+  }
+  cliente.print(pagina2);
+  if(estadoRele == 0){
+    cliente.print("checked");
+  }
+  cliente.print(pagina3);
+  if(encenderE == 1){
+    cliente.print("checked");
+  }
+  cliente.print(pagina4);
+  if(encenderE == 0){
+    cliente.print("checked");
+  }
+  cliente.print(pagina5);
+  if(estadoE == 0){
+    cliente.print("checked");
+    cliente.print(pagina6);
+    cliente.print(pagina7);
+    cliente.print(pagina8);
+    cliente.print(pagina9);
+  }
+  if(estadoE == 1){
+    cliente.print(pagina6);
+    cliente.print("checked");
+    cliente.print(pagina7);
+    cliente.print(pagina8);
+    cliente.print(pagina9);
+  }
+  if(estadoE == 2){
+    cliente.print(pagina6);
+    cliente.print(pagina7);
+    cliente.print("checked");
+    cliente.print(pagina8);
+    cliente.print(pagina9);
+  }
+  if(estadoE == 3){
+    cliente.print(pagina6);
+    cliente.print(pagina7);
+    cliente.print(pagina8);
+    cliente.print("checked");
+    cliente.print(pagina9);
+  }
+  if(estadoE == 4){
+    cliente.print(pagina6);
+    cliente.print(pagina7);
+    cliente.print(pagina8);
+    cliente.print(pagina9);
+    cliente.print("checked");
+  }
+  cliente.print(pagina10);
+  RGBhexa(rojoE, verdeE, azulE);
+  cliente.print(valorHexa);
 }
 
 //---------------------------------- verificacion de los mensajes ---------------------------
@@ -419,7 +686,7 @@ void loop(){
   {
     // metodo de musica
     pixelsG.setBrightness(brilloG);
-    efectoMusica(pixelsG, 1); // <------------------------ falta
+    efectoMusica(pixelsG, 1); 
   }
   else if (estadoG == 2 && encenderG == 1)
   {
@@ -455,7 +722,7 @@ void loop(){
   {
     // metodo de musica
     pixelsE.setBrightness(brilloE);
-    efectoMusica(pixelsE, 3); // <------------------------ falta
+    efectoMusica(pixelsE, 3);
   }
   else if (estadoE == 2 && encenderE == 1)
   {
@@ -478,11 +745,11 @@ void loop(){
   // rele
   if (estadoRele == 0)
   {
-    digitalWrite(rele, LOW);
+    apagarRele();
   }
   else
   {
-    digitalWrite(rele, HIGH);
+    encenderRele();
   }
 
   // leer estado de los botones
