@@ -296,6 +296,10 @@ int rojoTemp = 255;
 int verdeTemp = 0;
 int azulTemp = 0;
 
+// variables para hora
+int horaSumar = 0;
+int minSumar = 0;
+
 // pratiras led
 #include <Adafruit_NeoPixel.h>
 #include <FastLED.h>
@@ -616,13 +620,180 @@ void ResponderCliente(WiFiClient &cliente){
   cliente.print(pagina10);
   RGBhexa(rojoE, verdeE, azulE);
   cliente.print(valorHexa);
+  cliente.print(pagina11);
+  cliente.print(brilloE);
+  cliente.print(pagina12);
+  if(encenderG == 1){
+    cliente.print("checked");
+  }
+  cliente.print(pagina13);
+  if(encenderG == 0){
+    cliente.print("checked");
+  }
+  cliente.print(pagina14);
+  if(estadoG == 0){
+    cliente.print("checked");
+    cliente.print(pagina15);
+    cliente.print(pagina16);
+    cliente.print(pagina17);
+    cliente.print(pagina18);
+  }
+  if(estadoG == 1){
+    cliente.print(pagina15);
+    cliente.print("checked");
+    cliente.print(pagina16);
+    cliente.print(pagina17);
+    cliente.print(pagina18);
+  }
+  if(estadoG == 2){
+    cliente.print(pagina15);
+    cliente.print(pagina16);
+    cliente.print("checked");
+    cliente.print(pagina17);
+    cliente.print(pagina18);
+  }
+  if(estadoG == 3){
+    cliente.print(pagina15);
+    cliente.print(pagina16);
+    cliente.print(pagina17);
+    cliente.print("checked");
+    cliente.print(pagina18);
+  }
+  if(estadoG == 4){
+    cliente.print(pagina15);
+    cliente.print(pagina16);
+    cliente.print(pagina17);
+    cliente.print(pagina18);
+    cliente.print("checked");
+  }
+  cliente.print(pagina19);
+  RGBhexa(rojoG, verdeG, azulG);
+  cliente.print(valorHexa);
+  cliente.print(pagina20);
+  cliente.print(brilloG);
+  cliente.print(pagina21);
+  cliente.print(mulMicrofono);
+  cliente.print(pagina22);
+  cliente.print(horaSumar);
+  cliente.print(pagina23);
+  cliente.print(minSumar);
+  cliente.print(pagina24);
 }
 
 //---------------------------------- verificacion de los mensajes ---------------------------
 void VerificarMensaje(String Mensaje)
 {
   int mensaje;
-  if (Mensaje.indexOf("GET /") >= 0){
+  int cont = 0;
+  String temp;
+  if (Mensaje.indexOf("?foco") >= 0){
+    if(Mensaje.indexOf("foco=1") >= 0){
+      estadoRele = 1;
+    }else{
+      estadoRele = 0;
+    }
+  }else if(Mensaje.indexOf("?tiraE") >= 0){
+    if(Mensaje.indexOf("tiraE=1") >= 0){
+      encenderE = 1;
+    }else{
+      encenderE = 0;
+    }
+
+    if(Mensaje.indexOf("efecto=0") >= 0){
+      estadoE = 0;
+    }else if(Mensaje.indexOf("efecto=1") >= 0){
+      estadoE = 1;
+    }else if(Mensaje.indexOf("efecto=2") >= 0){
+      estadoE = 2;
+    }else if(Mensaje.indexOf("efecto=3") >= 0){
+      estadoE = 3;
+    }else{
+      estadoE = 4;
+    }
+
+    mensaje = Mensaje.indexOf("color=");
+    temp = Mensaje[mensaje + 9];
+    temp += Mensaje[mensaje + 10];
+    temp += Mensaje[mensaje + 11];
+    temp += Mensaje[mensaje + 12];
+    temp += Mensaje[mensaje + 13];
+    temp += Mensaje[mensaje + 14];
+    Serial.println(temp);
+
+    mensaje = Mensaje.indexOf("brillo=");
+    temp = Mensaje[mensaje + 6];
+    if(Mensaje[mensaje + 7] != ' ' || Mensaje[mensaje + 7] != '/n'){
+      temp = Mensaje[mensaje + 7];
+    }
+    if(Mensaje[mensaje + 8] != ' ' || Mensaje[mensaje + 8] != '/n'){
+      temp = Mensaje[mensaje + 8];
+    }
+    Serial.println(temp);
+  }else if(Mensaje.indexOf("?tiraG") >= 0){
+    if(Mensaje.indexOf("tiraG=1") >= 0){
+      encenderG = 1;
+    }else{
+      encenderG = 0;
+    }
+
+    if(Mensaje.indexOf("efecto=0") >= 0){
+      estadoG = 0;
+    }else if(Mensaje.indexOf("efecto=1") >= 0){
+      estadoG = 1;
+    }else if(Mensaje.indexOf("efecto=2") >= 0){
+      estadoG = 2;
+    }else if(Mensaje.indexOf("efecto=3") >= 0){
+      estadoG = 3;
+    }else{
+      estadoG = 4;
+    }
+
+    mensaje = Mensaje.indexOf("color=");
+    temp = Mensaje[mensaje + 9];
+    temp += Mensaje[mensaje + 10];
+    temp += Mensaje[mensaje + 11];
+    temp += Mensaje[mensaje + 12];
+    temp += Mensaje[mensaje + 13];
+    temp += Mensaje[mensaje + 14];
+    Serial.println(temp);
+
+    mensaje = Mensaje.indexOf("brillo=");
+    temp = Mensaje[mensaje + 6];
+    if(Mensaje[mensaje + 7] != ' ' || Mensaje[mensaje + 7] != '/n'){
+      temp = Mensaje[mensaje + 7];
+    }
+    if(Mensaje[mensaje + 8] != ' ' || Mensaje[mensaje + 8] != '/n'){
+      temp = Mensaje[mensaje + 8];
+    }
+    Serial.println(temp);
+  }else if(Mensaje.indexOf("?micro") >= 0){
+    mensaje = Mensaje.indexOf("micro=");
+    cont = 0;
+    temp = "";
+    while(Mensaje[mensaje + 6 + cont] != '&'){
+      temp += Mensaje[mensaje + 6 + cont];
+      cont++;
+    }
+    Serial.println(temp);
+
+    mensaje = Mensaje.indexOf("hora=");
+    cont = 0;
+    temp = "";
+    while(Mensaje[mensaje + 5 + cont] != '&'){
+      temp += Mensaje[mensaje + 5 + cont];
+      cont++;
+    }
+    Serial.println(temp);
+
+    mensaje = Mensaje.indexOf("minuto=");
+    cont = 0;
+    temp = "";
+    while(Mensaje[mensaje + 7 + cont] != ' ' || Mensaje[mensaje + 7 + cont] != '/n'){
+      temp += Mensaje[mensaje + 7 + cont];
+      cont++;
+    }
+    Serial.println(temp);
+
   }
 }
 
