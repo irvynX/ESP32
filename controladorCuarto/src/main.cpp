@@ -17,10 +17,8 @@ ESP8266WiFiMulti wifiMulti;
 
 #include <HTTPClient.h>
 
-const String pagina1 = R"====(HTTP/1.1 200 OK
-Content-Type: text/html
-<!DOCTYPE html>
-<html lang="es">
+const String pagina1 = R"====(
+<html>
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -420,7 +418,7 @@ int leerMicro()
 
   // Convertir el nivel de audio en la cantidad de LED que se deben encender
   int cantidadLEDs = map(nivelAudio, 0, 1023, 0, numLeds);
-  Serial.println("microfono: " + cantidadLEDs);
+  //Serial.println("microfono: " + cantidadLEDs);
 
   return cantidadLEDs;
 }
@@ -433,11 +431,11 @@ void hexaRGB (String valor){
   int g = (number >> 8) & 255; // Obtener valor de verde
   int b = number & 255; // Obtener valor de azul
 
-  Serial.print(r); // Imprimir valor de rojo en la consola serie
-  Serial.print(",");
-  Serial.print(g); // Imprimir valor de verde en la consola serie
-  Serial.print(",");
-  Serial.println(b); // Imprimir valor de azul en la consola serie
+  //Serial.print(r); // Imprimir valor de rojo en la consola serie
+  //Serial.print(",");
+  //Serial.print(g); // Imprimir valor de verde en la consola serie
+  //Serial.print(",");
+  //Serial.println(b); // Imprimir valor de azul en la consola serie
 
   rojoTemp = r;
   verdeTemp = g;
@@ -446,7 +444,7 @@ void hexaRGB (String valor){
 
 void RGBhexa (int r, int g, int b){
   String hexColor = String(r, HEX) + String(g, HEX) + String(b, HEX); // Convertir RGB a hexadecimal
-  Serial.println(hexColor); // Imprimir valor hexadecimal en la consola serie
+  //Serial.println(hexColor); Imprimir valor hexadecimal en la consola serie
   valorHexa = "#" + hexColor;
 }
 //-----------------------------------metodos de los efectos --------------------------------
@@ -774,7 +772,7 @@ void VerificarMensaje(String Mensaje)
       temp += Mensaje[mensaje + 6 + cont];
       cont++;
     }
-    Serial.println(temp);
+    Serial.println("micro: " + temp);
 
     mensaje = Mensaje.indexOf("hora=");
     cont = 0;
@@ -783,7 +781,7 @@ void VerificarMensaje(String Mensaje)
       temp += Mensaje[mensaje + 5 + cont];
       cont++;
     }
-    Serial.println(temp);
+    Serial.println("hora: " + temp);
 
     mensaje = Mensaje.indexOf("minuto=");
     cont = 0;
@@ -792,7 +790,7 @@ void VerificarMensaje(String Mensaje)
       temp += Mensaje[mensaje + 7 + cont];
       cont++;
     }
-    Serial.println(temp);
+    Serial.println("minuto: " + temp);
 
   }
 }
