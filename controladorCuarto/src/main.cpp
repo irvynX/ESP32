@@ -96,21 +96,22 @@ const String pagina9 = R"====(>
 const String pagina10 = R"====(>
                             <label class="btn btn-outline-light" for="btnradio7">RESPIRAR</label>
                         </div>
-                        <div class="mb-4 align-content-center">
-                            <h3>COLOR</h3>
-                            <input type="color" class="form-control form-control-color m-auto" value=")====";
-// ------------------------------- ingresamos el valor en hexadecimal de la tira led
-const String pagina11 = R"====(" title="Choose your color" name="color">
-                        </div>
                         <br>
                         <br>
                         <h3>BRILLO</h3>
                         <div class="mb-4">
                             <input type="range" class="form-range w-50 p-3" min="0" max="255" step="5" id="customRange3" name="brillo" value=")====";
-// ------------------------------ ingresamos el brillo de nuestra tira led en un rango de 0 a 255
-const String pagina12 = R"====(">
+// ------------------------------- ingresamos el valor en hexadecimal de la tira led
+const String pagina11 = R"====(">
                         </div>
                         <br>
+                        
+                        <div class="mb-4 align-content-center">
+                            <h3>COLOR</h3>
+                            <input type="color" class="form-control form-control-color m-auto" value=")====";
+// ------------------------------ ingresamos el brillo de nuestra tira led en un rango de 0 a 255
+const String pagina12 = R"====(" title="Choose your color" name="color">
+                        </div>
                         <input type="submit" value="enviar" class="btn btn-outline-info">
                     </div>
                 </form>
@@ -160,19 +161,21 @@ const String pagina18 = R"====(>
 const String pagina19 = R"====(>
                             <label class="btn btn-outline-light" for="btnradio12">RESPIRAR</label>
                         </div>
-                        <div class="mb-4">
-                            <h3>COLOR</h3>
-                            <input type="color" class="form-control form-control-color m-auto" value=")====";
-// -------------------------- valor en hexadecimal del color
-const String pagina20 = R"====(" title="Choose your color" name="color">
-                        </div>
                         <br>
                         <br>
                         <h3>BRILLO</h3>
                         <div class="mb-4">
                             <input type="range" class="form-range w-50 p-3" min="0" max="255" step="5" id="customRange3" name="brillo" value=")====";
+                        
+// -------------------------- valor en hexadecimal del color
+const String pagina20 = R"====(">
+                        </div>
+                        <div class="mb-4">
+                            <h3>COLOR</h3>
+                            <input type="color" class="form-control form-control-color m-auto" value=")====";
+                        
 // -------------------------- brillo de la tira led
-const String pagina21 = R"====(">
+const String pagina21 = R"====(" title="Choose your color" name="color">
                         </div>
                         <br>
                         <input type="submit" value="enviar" class="btn btn-outline-info">
@@ -431,22 +434,32 @@ void hexaRGB (String valor){
   int g = (number >> 8) & 255; // Obtener valor de verde
   int b = number & 255; // Obtener valor de azul
 
-  //Serial.print(r); // Imprimir valor de rojo en la consola serie
-  //Serial.print(",");
-  //Serial.print(g); // Imprimir valor de verde en la consola serie
-  //Serial.print(",");
-  //Serial.println(b); // Imprimir valor de azul en la consola serie
+  Serial.print(r); // Imprimir valor de rojo en la consola serie
+  Serial.print(",");
+  Serial.print(g); // Imprimir valor de verde en la consola serie
+  Serial.print(",");
+  Serial.println(b); // Imprimir valor de azul en la consola serie
 
   rojoTemp = r;
   verdeTemp = g;
   azulTemp = b;
 }
 
-void RGBhexa (int r, int g, int b){
-  String hexColor = String(r, HEX) + String(g, HEX) + String(b, HEX); // Convertir RGB a hexadecimal
-  //Serial.println(hexColor); Imprimir valor hexadecimal en la consola serie
-  valorHexa = "#" + hexColor;
+void RGBhexa(int r, int g, int b) {
+  char hexR[3];
+  char hexG[3];
+  char hexB[3];
+  
+  sprintf(hexR, "%02X", r);
+  sprintf(hexG, "%02X", g);
+  sprintf(hexB, "%02X", b);
+
+  valorHexa = "#" + String(hexR) + String(hexG) + String(hexB); // Combinar con "#" y la cadena con ceros a la izquierda
+  Serial.println(valorHexa);
 }
+
+
+
 //-----------------------------------metodos de los efectos --------------------------------
 
 //-----------------------------------efecto Musica -----------------------------------------
@@ -616,10 +629,10 @@ void ResponderCliente(WiFiClient &cliente){
     cliente.print("checked");
   }
   cliente.print(pagina10);
+  cliente.print(brilloE);
+  cliente.print(pagina11);
   RGBhexa(rojoE, verdeE, azulE);
   cliente.print(valorHexa);
-  cliente.print(pagina11);
-  cliente.print(brilloE);
   cliente.print(pagina12);
   if(encenderG == 1){
     cliente.print("checked");
@@ -665,10 +678,10 @@ void ResponderCliente(WiFiClient &cliente){
     cliente.print("checked");
   }
   cliente.print(pagina19);
+  cliente.print(brilloG);
+  cliente.print(pagina20);
   RGBhexa(rojoG, verdeG, azulG);
   cliente.print(valorHexa);
-  cliente.print(pagina20);
-  cliente.print(brilloG);
   cliente.print(pagina21);
   cliente.print(mulMicrofono);
   cliente.print(pagina22);
@@ -687,26 +700,35 @@ void VerificarMensaje(String Mensaje)
   if (Mensaje.indexOf("?foco") >= 0){
     if(Mensaje.indexOf("foco=1") >= 0){
       estadoRele = 1;
+      Serial.println("rele encendido");
     }else{
       estadoRele = 0;
+      Serial.println("rele apagado");
     }
   }else if(Mensaje.indexOf("?tiraE") >= 0){
     if(Mensaje.indexOf("tiraE=1") >= 0){
+      Serial.println("tira E: encendido");
       encenderE = 1;
     }else{
       encenderE = 0;
+      Serial.println("tira E: apagado");
     }
 
     if(Mensaje.indexOf("efecto=0") >= 0){
       estadoE = 0;
+      Serial.println("efecto 0");
     }else if(Mensaje.indexOf("efecto=1") >= 0){
       estadoE = 1;
+      Serial.println("efecto 1");
     }else if(Mensaje.indexOf("efecto=2") >= 0){
       estadoE = 2;
+      Serial.println("efecto 2");
     }else if(Mensaje.indexOf("efecto=3") >= 0){
       estadoE = 3;
+      Serial.println("efecto 3");
     }else{
       estadoE = 4;
+      Serial.println("efecto 4");
     }
 
     mensaje = Mensaje.indexOf("color=");
@@ -717,33 +739,45 @@ void VerificarMensaje(String Mensaje)
     temp += Mensaje[mensaje + 13];
     temp += Mensaje[mensaje + 14];
     Serial.println(temp);
+    hexaRGB(temp);
+    rojoE = rojoTemp;
+    verdeE = verdeTemp;
+    azulE = azulTemp;
 
     mensaje = Mensaje.indexOf("brillo=");
-    temp = Mensaje[mensaje + 6];
-    if(Mensaje[mensaje + 7] != ' ' || Mensaje[mensaje + 7] != '/n'){
-      temp = Mensaje[mensaje + 7];
+    temp = Mensaje[mensaje + 5];
+    if(Mensaje[mensaje + 6] != '&'){
+      temp += Mensaje[mensaje + 6];
     }
-    if(Mensaje[mensaje + 8] != ' ' || Mensaje[mensaje + 8] != '/n'){
-      temp = Mensaje[mensaje + 8];
+    if(Mensaje[mensaje + 7] != '&'){
+      temp += Mensaje[mensaje + 7];
     }
     Serial.println(temp);
+    brilloE = temp.toInt();
   }else if(Mensaje.indexOf("?tiraG") >= 0){
     if(Mensaje.indexOf("tiraG=1") >= 0){
       encenderG = 1;
+      Serial.println("tira G: encendida");
     }else{
       encenderG = 0;
+      Serial.println("tira G: apagado");
     }
 
     if(Mensaje.indexOf("efecto=0") >= 0){
       estadoG = 0;
+      Serial.println("efecto 0");
     }else if(Mensaje.indexOf("efecto=1") >= 0){
       estadoG = 1;
+      Serial.println("efecto 1");
     }else if(Mensaje.indexOf("efecto=2") >= 0){
       estadoG = 2;
+      Serial.println("efecto 2");
     }else if(Mensaje.indexOf("efecto=3") >= 0){
       estadoG = 3;
+      Serial.println("efecto 3");
     }else{
       estadoG = 4;
+      Serial.println("efecto 4");
     }
 
     mensaje = Mensaje.indexOf("color=");
@@ -754,16 +788,21 @@ void VerificarMensaje(String Mensaje)
     temp += Mensaje[mensaje + 13];
     temp += Mensaje[mensaje + 14];
     Serial.println(temp);
+    hexaRGB(temp);
+    rojoG = rojoTemp;
+    verdeG = verdeTemp;
+    azulG = azulTemp;
 
     mensaje = Mensaje.indexOf("brillo=");
-    temp = Mensaje[mensaje + 6];
-    if(Mensaje[mensaje + 7] != ' ' || Mensaje[mensaje + 7] != '/n'){
-      temp = Mensaje[mensaje + 7];
+    temp = Mensaje[mensaje + 5];
+    if(Mensaje[mensaje + 6] != '&'){
+      temp += Mensaje[mensaje + 6];
     }
-    if(Mensaje[mensaje + 8] != ' ' || Mensaje[mensaje + 8] != '/n'){
-      temp = Mensaje[mensaje + 8];
+    if(Mensaje[mensaje + 7] != '&'){
+      temp += Mensaje[mensaje + 7];
     }
     Serial.println(temp);
+    brilloG = temp.toInt();
   }else if(Mensaje.indexOf("?micro") >= 0){
     mensaje = Mensaje.indexOf("micro=");
     cont = 0;
