@@ -201,7 +201,10 @@ const String pagina23 = R"====(">
                                 <input type="number" class="form-control w-50 m-auto" placeholder="MM" name="minuto" min="-60" max="60" value=")====";
 // ------------------------- minutos que se va a sumar o restar al reloj
 const String pagina24 = R"====(">
-                            </div>                          
+                            </div>  
+                            <div invisible>
+                              <input type="number" class="form-control w-50 m-auto" placeholder="MM" name="no" min="-60" max="60" value="1">
+                            </div>                        
                         </div>
                     </div>
                     <br>
@@ -228,6 +231,11 @@ const int numLeds = 30;
 int tira1 = 18;
 // tira escritorio
 int tira2 = 19;
+// reloj
+int reloj = 21;
+int numLedsReloj = 70;
+int relojX = 14;
+int relojY = 5;
 // microfono
 int microfono = 34;
 // rele
@@ -309,6 +317,8 @@ int minSumar = 0;
 Adafruit_NeoPixel pixelsG(numLeds, tira1, NEO_GRB + NEO_KHZ800);
 // escritorio
 Adafruit_NeoPixel pixelsE(numLeds, tira2, NEO_GRB + NEO_KHZ800);
+// reloj
+Adafruit_NeoPixel pixelsReloj(numLedsReloj, reloj, NEO_GRB + NEO_KHZ800);
 
 void setup()
 {
@@ -344,6 +354,9 @@ void setup()
   pinMode(boton6, INPUT);
   pinMode(boton7, INPUT);
 
+  pixelsReloj.begin();
+  pixelsReloj.show();
+  
   pixelsG.begin();
   pixelsE.begin();
 
@@ -745,12 +758,12 @@ void VerificarMensaje(String Mensaje)
     azulE = azulTemp;
 
     mensaje = Mensaje.indexOf("brillo=");
-    temp = Mensaje[mensaje + 5];
-    if(Mensaje[mensaje + 6] != '&'){
-      temp += Mensaje[mensaje + 6];
+    temp = Mensaje[mensaje + 7];
+    if(Mensaje[mensaje + 8] != '&'){
+      temp += Mensaje[mensaje + 8];
     }
-    if(Mensaje[mensaje + 7] != '&'){
-      temp += Mensaje[mensaje + 7];
+    if(Mensaje[mensaje + 9] != '&'){
+      temp += Mensaje[mensaje + 9];
     }
     Serial.println(temp);
     brilloE = temp.toInt();
@@ -794,12 +807,12 @@ void VerificarMensaje(String Mensaje)
     azulG = azulTemp;
 
     mensaje = Mensaje.indexOf("brillo=");
-    temp = Mensaje[mensaje + 5];
-    if(Mensaje[mensaje + 6] != '&'){
-      temp += Mensaje[mensaje + 6];
+    temp = Mensaje[mensaje + 7];
+    if(Mensaje[mensaje + 8] != '&'){
+      temp += Mensaje[mensaje + 8];
     }
-    if(Mensaje[mensaje + 7] != '&'){
-      temp += Mensaje[mensaje + 7];
+    if(Mensaje[mensaje + 9] != '&'){
+      temp += Mensaje[mensaje + 9];
     }
     Serial.println(temp);
     brilloG = temp.toInt();
@@ -812,6 +825,7 @@ void VerificarMensaje(String Mensaje)
       cont++;
     }
     Serial.println("micro: " + temp);
+    mulMicrofono = temp.toInt();
 
     mensaje = Mensaje.indexOf("hora=");
     cont = 0;
@@ -821,15 +835,17 @@ void VerificarMensaje(String Mensaje)
       cont++;
     }
     Serial.println("hora: " + temp);
+    horaSumar = temp.toInt();
 
     mensaje = Mensaje.indexOf("minuto=");
     cont = 0;
     temp = "";
-    while(Mensaje[mensaje + 7 + cont] != ' ' || Mensaje[mensaje + 7 + cont] != '/n'){
+    while(Mensaje[mensaje + 7 + cont] != '&'){
       temp += Mensaje[mensaje + 7 + cont];
       cont++;
     }
     Serial.println("minuto: " + temp);
+    minSumar = temp.toInt();
 
   }
 }
@@ -961,65 +977,65 @@ void loop(){
   }
 
   // leer estado de los botones
-  int botonEstado1 = digitalRead(boton1); // encender y apagar tira 1
-  int botonEstado2 = digitalRead(boton2); // encender y apagar tira 2
-  int botonEstado3 = digitalRead(boton3); // encender y apagar rele
-  int botonEstado4 = digitalRead(boton4); // cambiar efecto 1
-  int botonEstado5 = digitalRead(boton5); // cambiar efecto 2
-  int botonEstado6 = digitalRead(boton6); // apagar todo
-  int botonEstado7 = digitalRead(boton7); // encender todo
+  int botonEstado1 = digitalRead(boton1); // encender y apagar tira 1 x
+  int botonEstado2 = digitalRead(boton2); // encender y apagar tira 2 x
+  int botonEstado3 = digitalRead(boton3); // encender y apagar rele x
+  int botonEstado4 = digitalRead(boton4); // encender todo x
+  int botonEstado5 = digitalRead(boton5); // cambiar efecto 2 x
+  int botonEstado6 = digitalRead(boton6); // cambiar efecto 1 x 
+  int botonEstado7 = digitalRead(boton7); // apagar todo x
 
   // realizar acciones en función del estado de los botones
   if (botonEstado1 == HIGH)
   {
     encedeApagarTiraG();
-    Serial.println("Botón táctil tocado!");
+    Serial.println("Botón tira 1!");
     delay(500);
   }
 
   if (botonEstado2 == HIGH)
   {
     encedeApagarTiraE();
-    Serial.println("Botón táctil tocado!");
+    Serial.println("Botón tira 2!");
     delay(500);
   }
 
   if (botonEstado3 == HIGH)
   {
     encedeApagarFoco();
-    Serial.println("Botón táctil tocado!");
+    Serial.println("Botón rele!");
     delay(500);
   }
 
   if (botonEstado4 == HIGH)
   {
-    cambiarEfectoG();
-    Serial.println("Botón táctil tocado!");
+    encenderG = 1;
+    encenderE = 1;
+    estadoRele = 1;
+    Serial.println("Botón encender todo!");
     delay(500);
   }
 
   if (botonEstado5 == HIGH)
   {
     cambiarEfectoE();
-    Serial.println("Botón táctil tocado!");
+    Serial.println("Botón cambiar efecto tira 2!");
     delay(500);
   }
 
   if (botonEstado6 == HIGH)
   {
-    encenderG = 0;
-    encenderE = 0;
-    estadoRele = 0;
-    Serial.println("Botón táctil tocado!");
+    cambiarEfectoG();
+    Serial.println("Botón cambiar efecto tira 1!");
     delay(500);
   }
 
   if (botonEstado7 == HIGH)
   {
-    encenderG = 1;
-    encenderE = 1;
-    estadoRele = 1;
-    Serial.println("Botón táctil tocado!");
+    encenderG = 0;
+    encenderE = 0;
+    estadoRele = 0;
+    Serial.println("Botón apagar todo!");
     delay(500);
   }
 }
