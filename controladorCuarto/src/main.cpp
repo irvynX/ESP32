@@ -202,7 +202,7 @@ const String pagina23 = R"====(">
 // ------------------------- minutos que se va a sumar o restar al reloj
 const String pagina24 = R"====(">
                             </div>  
-                            <div invisible>
+                            <div class="invisible">
                               <input type="number" class="form-control w-50 m-auto" placeholder="MM" name="no" min="-60" max="60" value="1">
                             </div>                        
                         </div>
