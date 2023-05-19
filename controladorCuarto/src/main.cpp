@@ -220,7 +220,7 @@ const uint32_t TiempoEsperaWifi = 5000;
 
 unsigned long TiempoActual = 0;
 unsigned long TiempoAnterior = 0;
-const long TiempoCancelacion = 500;
+const long TiempoCancelacion = 10000;
 
 WiFiServer servidor(80);
 
@@ -278,7 +278,7 @@ int azulE = 0;
 int brilloE = 255;
 
 // sencibilidaddel microfono
-int mulMicrofono = 0;
+int mulMicrofono = 1;
 
 // variables para el rele
 int estadoRele = 0;
@@ -286,12 +286,16 @@ int estadoRele = 0;
 int encenderLeds = 0;
 int tiempoActualMusica = 0;
 int tiempoPrevioMusica = 0;
-int intervaloMusica = 50;
+int intervaloMusica = 500;
+// variables para musica 2
 int luces[numLeds];
+int tiempoActualMusica2 = 0;
+int tiempoPrevioMusica2 = 0;
+int intervaloMusica2 = 500;
 // variables para llenar tira
 int tiempoActualLlenar = 0;
 int tiempoPrevioLlenar = 0;
-int intervaloLlenar = 50;
+int intervaloLlenar = 40;
 int ledLlenar = 0;
 // variables para respirar
 int tiempoActualRes = 0;
@@ -311,7 +315,6 @@ int minSumar = 0;
 
 // pratiras led
 #include <Adafruit_NeoPixel.h>
-#include <FastLED.h>
 
 // gabinete
 Adafruit_NeoPixel pixelsG(numLeds, tira1, NEO_GRB + NEO_KHZ800);
@@ -424,17 +427,23 @@ void encenderRele(){
 }
 
 void apagarRele(){
-  digitalWrite(rele, LOW);
+  digitalWrite(rele, HIGH);
 }
 
 int leerMicro()
 {
   // Leer el nivel de audio desde el micrófono
   int nivelAudio = analogRead(microfono) * mulMicrofono;
-
+  //Serial.println(nivelAudio);
+  if (nivelAudio < 0){
+    nivelAudio = 0;
+  }
+  if (nivelAudio > 4000){
+    nivelAudio = 4000;
+  }
   // Convertir el nivel de audio en la cantidad de LED que se deben encender
-  int cantidadLEDs = map(nivelAudio, 0, 1023, 0, numLeds);
-  //Serial.println("microfono: " + cantidadLEDs);
+  int cantidadLEDs = map(nivelAudio, 0, 4000, 0, numLeds-1);
+  // Serial.println("microfono: " + cantidadLEDs);
 
   return cantidadLEDs;
 }
@@ -481,13 +490,6 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
   tiempoActualMusica = millis();
   if (tiempoActualMusica - tiempoPrevioMusica >= intervaloMusica){
     encenderLeds = leerMicro();
-    for (int i = 0; i < (numLeds - 1); i++)
-    {
-      luces[i + 1] = luces[i];
-    }
-    luces[0] = encenderLeds;
-
-    tiempoPrevioMusica = millis();
   }
   if (num == 1)
   {
@@ -499,30 +501,22 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
   if (num == 2)
   {
     // tiraG efecto 2
-    for (int i = 0; i < (numLeds - 1); i++)
-    {
-      miPixels.setPixelColor((i + 1), map(luces[i + 1], 0, 30, 0, rojoG), map(luces[i + 1], 0, 30, 0, verdeG), map(luces[i + 1], 0, 30, 0, azulG));
-    }
-    miPixels.setPixelColor((0), map(luces[0], 0, 30, 0, rojoG), map(luces[0], 0, 30, 0, verdeG), map(luces[0], 0, 30, 0, azulG));
+    miPixels.fill(miPixels.Color(rojoG, verdeG, azulG), 0, numLeds);
+    miPixels.setBrightness(map(encenderLeds, 0, numLeds, 0, 255));
     miPixels.show();
   }
   if (num == 3)
   {
     // tiraE efecto 1
-    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), numLeds / 2, (numLeds / 2) + (encenderLeds / 2));
-    miPixels.fill(miPixels.Color(0, 0, 0), (numLeds / 2) + (encenderLeds / 2), numLeds);
-    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), (numLeds / 2) - (encenderLeds / 2), numLeds / 2);
-    miPixels.fill(miPixels.Color(0, 0, 0), 0, (numLeds / 2) - (encenderLeds / 2));
+    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), 0, encenderLeds);
+    miPixels.fill(miPixels.Color(0, 0, 0), encenderLeds, numLeds);
     miPixels.show();
   }
   if (num == 4)
   {
     // tiraE efecto 2
-    for (int i = 0; i < (numLeds - 1); i++)
-    {
-      miPixels.setPixelColor((i + 1), map(luces[i + 1], 0, 30, 0, rojoE), map(luces[i + 1], 0, 30, 0, verdeE), map(luces[i + 1], 0, 30, 0, azulE));
-    }
-    miPixels.setPixelColor((0), map(luces[0], 0, 30, 0, rojoE), map(luces[0], 0, 30, 0, verdeE), map(luces[0], 0, 30, 0, azulE));
+    miPixels.fill(miPixels.Color(rojoE, verdeE, azulE), 0, numLeds);
+    miPixels.setBrightness(map(encenderLeds, 0, numLeds, 0, 255));
     miPixels.show();
   }
 }
@@ -531,16 +525,18 @@ void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
   tiempoActualLlenar = millis();
   if (tiempoActualLlenar - tiempoPrevioLlenar >= intervaloLlenar){
     if(estadoG == 3){
-      miPixelsG.setPixelColor(ledLlenar - 3, rojoG/8, verdeG/8, azulG/8);
-      miPixelsG.setPixelColor(ledLlenar - 2, rojoG/4, verdeG/4, azulG/4);
-      miPixelsG.setPixelColor(ledLlenar - 1, rojoG/2, verdeG/2, azulG/2);
-      miPixelsG.setPixelColor(ledLlenar, rojoG, verdeG, azulG);
+      miPixelsG.setPixelColor(ledLlenar - 4, rojoG/16, verdeG/16, azulG/16);
+      miPixelsG.setPixelColor(ledLlenar - 3, rojoE/8, verdeE/8, azulE/8);
+      miPixelsG.setPixelColor(ledLlenar - 2, rojoE/4, verdeE/4, azulE/4);
+      miPixelsG.setPixelColor(ledLlenar - 1, rojoE/2, verdeE/2, azulE/2);
+      miPixelsG.setPixelColor(ledLlenar, rojoE, verdeE, azulE);
       miPixelsG.show();
     }
     if(estadoE == 3){
-      miPixelsE.setPixelColor(ledLlenar - 3, rojoE/8, verdeE/8, azulE/8);
-      miPixelsE.setPixelColor(ledLlenar - 2, rojoE/4, verdeE/4, azulE/4);
-      miPixelsE.setPixelColor(ledLlenar - 1, rojoE/2, verdeE/2, azulE/2);
+      miPixelsE.setPixelColor(ledLlenar - 4, rojoE/16, verdeE/16, azulE/16);
+      miPixelsE.setPixelColor(ledLlenar - 3, rojoG/8, verdeG/8, azulG/8);
+      miPixelsE.setPixelColor(ledLlenar - 2, rojoG/4, verdeG/4, azulG/4);
+      miPixelsE.setPixelColor(ledLlenar - 1, rojoG/2, verdeG/2, azulG/2);
       miPixelsE.setPixelColor(ledLlenar, rojoG, verdeG, azulG);
       miPixelsE.show();
     }
@@ -553,24 +549,28 @@ void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
   }
 }
 
-//-----------------------------------efecto llenar tira -----------------------------------------
+//-----------------------------------efecto respirar tira -----------------------------------------
 void repirar(){
+  tiempoActualRes = millis();
   if (tiempoActualRes - tiempoPrevioRes >= intervaloRes)
   {
     if (estadoG == 4)
     {
+      pixelsG.fill(pixelsG.Color(rojoG, verdeG, azulG), 0, numLeds);
       pixelsG.setBrightness(brillo);
       pixelsG.show();
     }
     if (estadoE == 4)
     {
+      pixelsE.fill(pixelsE.Color(rojoE, verdeE, azulE), 0, numLeds);
       pixelsE.setBrightness(brillo);
       pixelsE.show();
     }
+    Serial.println(brillo);
     if (respirar == true)
     {
       brillo++;
-      if (brillo > 255)
+      if (brillo > 254)
       {
         respirar = false;
       }
@@ -583,6 +583,7 @@ void repirar(){
         respirar = true;
       }
     }
+    tiempoPrevioRes = millis();
   }
 }
 
@@ -859,10 +860,10 @@ void loop(){
   {
     Serial.println("Nuevo Cliente");
     TiempoActual = millis();
-    TiempoAnterior = TiempoActual;
+    TiempoAnterior = millis();
     String LineaActual = "";
 
-    while (cliente.connected() && TiempoActual - TiempoAnterior <= TiempoCancelacion)
+    while (cliente.connected() && (TiempoActual - TiempoAnterior <= TiempoCancelacion))
     {
       if (cliente.available())
       {
@@ -962,7 +963,6 @@ void loop(){
   }
   else if (estadoE == 4 && encenderE == 1)
   {
-    // encender y apagar
     repirar();
   }
 

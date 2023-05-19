@@ -1,14 +1,14 @@
 
 Tiras de LED:
-30  Pin de datos para la tira de LED 1: GPIO 4
-30  Pin de datos para la tira de LED 2: GPIO 18
-70  Pin de datos para la tira de LED 3: GPIO 19
+30  Pin de datos para la tira de LED 1: GPIO 18
+30  Pin de datos para la tira de LED 2: GPIO 19
+70  Pin de datos para la tira de LED 3: GPIO 21
 
 Micrófono:
     Pin de datos: GPIO 34
 
 Relé:
-    Pin de control: GPIO 27
+    Pin de control: GPIO 5
 
 Botones táctiles:
     Botón táctil 1: GPIO 0
