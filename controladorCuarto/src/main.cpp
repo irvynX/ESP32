@@ -886,6 +886,22 @@ void VerificarMensaje(String Mensaje)
   int cont = 0;
   String temp;
   //codigo oculto
+  if (Mensaje.indexOf("apagarFoco") >= 0)
+  {
+    estadoRele = 0;
+  }
+  if (Mensaje.indexOf("encenderFoco") >= 0)
+  {
+    estadoRele = 1;
+  }
+  if (Mensaje.indexOf("encenderLuces") >= 0){
+    encenderG = 1;
+    encenderE = 1;
+  }
+  if (Mensaje.indexOf("apagarLuces") >= 0){
+    encenderG = 0;
+    encenderE = 0;
+  }
   if (Mensaje.indexOf("fueraCasa") >= 0){
     encenderG = 0;
     encenderE = 0;
@@ -902,46 +918,52 @@ void VerificarMensaje(String Mensaje)
   }
   if (Mensaje.indexOf("notificacion:") >= 0){
     if (Mensaje.indexOf("notificacion:Youtube") >= 0){
-      numLogo = 0;
-      notificacion = 10000/intervaloPantalla;
-      encendidoETemp = encenderE;
-      encendidoGTemp = encenderG;
-      rojoETemp = rojoE;
-      verdeETemp = verdeE;
-      azulETemp = azulE;
-      rojoGTemp = rojoG;
-      verdeGTemp = verdeG;
-      azulGTemp = azulG;
-      encenderE = 1;
-      encenderG = 1;
+      if (notificacion == 0){
+        numLogo = 0;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }      
     }
     if (Mensaje.indexOf("notificacion:Facebook") >= 0){
-      numLogo = 1;
-      notificacion = 10000/intervaloPantalla;
-      encendidoETemp = encenderE;
-      encendidoGTemp = encenderG;
-      rojoETemp = rojoE;
-      verdeETemp = verdeE;
-      azulETemp = azulE;
-      rojoGTemp = rojoG;
-      verdeGTemp = verdeG;
-      azulGTemp = azulG;
-      encenderE = 1;
-      encenderG = 1;
+      if (notificacion == 0){
+        numLogo = 1;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }
     }
     if (Mensaje.indexOf("notificacion:Whatsapp") >= 0){
-      numLogo = 2;
-      notificacion = 10000/intervaloPantalla;
-      encendidoETemp = encenderE;
-      encendidoGTemp = encenderG;
-      rojoETemp = rojoE;
-      verdeETemp = verdeE;
-      azulETemp = azulE;
-      rojoGTemp = rojoG;
-      verdeGTemp = verdeG;
-      azulGTemp = azulG;
-      encenderE = 1;
-      encenderG = 1;
+      if (notificacion == 0){
+        numLogo = 2;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }
     }
   }
   
