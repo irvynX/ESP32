@@ -19,7 +19,7 @@ ESP8266WiFiMulti wifiMulti;
 #include <ArduinoJson.h>
 
 const String pagina1 = R"====(
-<html>
+<html lang="es-MX">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -239,14 +239,17 @@ int relojX = 14;
 int relojY = 5;
 int tiempoActualReloj = 0;
 int tiempoPrevioReloj = 0;
-int intervaloReloj = 45000;
+int intervaloReloj = 50000;
 int hora = 0;
 int minutos = 0;
+int tempMinutos = 0;
 int tiempoActualPantalla = 10000;
 int tiempoPrevioPantalla = 0;
-int intervaloPantalla = 250;
+int intervaloPantalla = 10;
+int encenderReloj = 1;
 // estas variables se tiene que configurar cuando hay notificacion
 int notificacion = 0;
+int cambioDeMinuto = 0;
 int numLogo = 0;
 int rojoGTemp = 0;
 int verdeGTemp = 0;
@@ -261,6 +264,7 @@ int microfono = 34;
 // rele
 int rele = 5;
 // boton 1
+/*
 int boton1 = 32;
 // boton 2
 int boton2 = 33;
@@ -274,7 +278,9 @@ int boton5 = 12;
 int boton6 = 13;
 // Definir el número de pin del botón táctil
 int boton7 = 15;
-
+*/
+// sensibilidad del boton
+int botonLimite = 15;
 // variables para las tiras led
 // cada estado indica el efecto
 //       0 = apagado
@@ -285,8 +291,8 @@ int boton7 = 15;
 //       5 = encender y apagar
 int estadoG = 0;
 int estadoE = 0;
-int encenderG = 1;
-int encenderE = 1;
+int encenderG = 0;
+int encenderE = 0;
 // color de la tira
 int rojoG = 255;
 int verdeG = 0;
@@ -298,7 +304,7 @@ int azulE = 0;
 int brilloE = 255;
 
 // sencibilidaddel microfono
-int mulMicrofono = 1;
+int mulMicrofono = 5;
 
 // variables para el rele
 int estadoRele = 0;
@@ -306,12 +312,13 @@ int estadoRele = 0;
 int encenderLeds = 0;
 int tiempoActualMusica = 0;
 int tiempoPrevioMusica = 0;
-int intervaloMusica = 500;
+int intervaloMusica = 50;
+int ultimosEncenderLeds[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 // variables para musica 2
 int luces[numLeds];
 int tiempoActualMusica2 = 0;
 int tiempoPrevioMusica2 = 0;
-int intervaloMusica2 = 500;
+int intervaloMusica2 = 50;
 // variables para llenar tira
 int tiempoActualLlenar = 0;
 int tiempoPrevioLlenar = 0;
@@ -438,7 +445,7 @@ const int num0_9[10][5][3] = {
         {1, 0, 1},
         {1, 1, 1},
         {0, 0, 1},
-        {1, 1, 1}
+        {0, 0, 1}
     }
 };
 
@@ -481,13 +488,6 @@ void setup()
   // preparar entradas
   pinMode(microfono, INPUT);
   pinMode(rele, OUTPUT);
-  pinMode(boton1, INPUT);
-  pinMode(boton2, INPUT);
-  pinMode(boton3, INPUT);
-  pinMode(boton4, INPUT);
-  pinMode(boton5, INPUT);
-  pinMode(boton6, INPUT);
-  pinMode(boton7, INPUT);
 
   pixelsReloj.begin();
   pixelsReloj.setBrightness(1);
@@ -499,6 +499,34 @@ void setup()
   pixelsG.show();
   pixelsE.show();
 }
+
+
+//------------------------------------------mostrar numero en pantalla --------------
+void mostrarNumero(int num, int x, int y) {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (num0_9[num][i][j] == 1) {
+        if ((j+ (x-1) + (relojX * i) + (relojX * (y-1))) <= (y+i) * relojX && (j+ (x-1) + (relojX * i) + (relojX * (y-1))) > (y+i-1) * relojX) {
+          pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
+        }
+      }
+    }
+  }
+}
+
+//------------------------------------------mostrar logo en pantalla --------------
+void mostrarLogo(int num, int x, int y) {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (logo[num][i][j] == 1) {
+        if ((j+ (x-1) + (relojX * i) + (relojX * (y-1))) <= (y+i) * relojX && (j+ (x-1) + (relojX * i) + (relojX * (y-1))) > (y+i-1) * relojX) {
+          pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
+        }
+      }
+    }
+  }
+}
+
 
 // metodos simples --------------------------------------------
 void encedeApagarTiraG()
@@ -637,7 +665,10 @@ void obtenerHora() {
             {
               hora -= 12;
             }
-            
+            if (tempMinutos != minutos){
+              cambioDeMinuto = 5000/intervaloPantalla;
+              tempMinutos = minutos;
+            }
 
             Serial.print(hora);
             Serial.print(":");
@@ -664,6 +695,11 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
   tiempoActualMusica = millis();
   if (tiempoActualMusica - tiempoPrevioMusica >= intervaloMusica){
     encenderLeds = leerMicro();
+    int encenderLeds = (encenderLeds + ultimosEncenderLeds[0] + ultimosEncenderLeds[1] + ultimosEncenderLeds[2] + ultimosEncenderLeds[3] + ultimosEncenderLeds[4] + ultimosEncenderLeds[5] + ultimosEncenderLeds[6] + ultimosEncenderLeds[7] + ultimosEncenderLeds[8] + ultimosEncenderLeds[9] + ultimosEncenderLeds[10] + ultimosEncenderLeds[11] + ultimosEncenderLeds[12] + ultimosEncenderLeds[13] + ultimosEncenderLeds[14] + ultimosEncenderLeds[15] + ultimosEncenderLeds[16] + ultimosEncenderLeds[17] + ultimosEncenderLeds[18] + ultimosEncenderLeds[19] / 21);
+    for (int i = 0; i < 19; i++){
+      ultimosEncenderLeds[i+1] = ultimosEncenderLeds[i]; 
+    }
+    ultimosEncenderLeds[0] = encenderLeds;
   }
   if (num == 1)
   {
@@ -693,6 +729,60 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
     miPixels.setBrightness(map(encenderLeds, 0, numLeds, 0, 255));
     miPixels.show();
   }
+  int tam1 = map(encenderLeds, 0, numLeds, 0, numLedsReloj);
+  int tam2 = map(ultimosEncenderLeds[1], 0, numLeds, 0, numLedsReloj);
+  int tam3 = map(ultimosEncenderLeds[2], 0, numLeds, 0, numLedsReloj);
+  int tam4 = map(ultimosEncenderLeds[3], 0, numLeds, 0, numLedsReloj);
+  int tam5 = map(ultimosEncenderLeds[4], 0, numLeds, 0, numLedsReloj);
+
+  // Calcular los nuevos tamaños de tam2 a tam5
+  int nuevoTam2 = (tam2 + tam1) / 2;
+  int nuevoTam3 = (tam3 + nuevoTam2) / 2;
+  int nuevoTam4 = (tam4 + nuevoTam3) / 2;
+  int nuevoTam5 = (tam5 + nuevoTam4) / 2;
+
+  if(encenderReloj == 1){
+    // de izquierda a derecha
+    pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), 0, nuevoTam4);
+    pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam4, relojX);
+
+    pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX, nuevoTam2 + (relojX + 1));
+    pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam2 + (relojX), relojX * 2);
+
+    pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 2, tam1 + (relojX * 2 + 1));
+    pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), tam1 + (relojX * 2), relojX * 3);
+
+    pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 3, nuevoTam3 + (relojX * 3 + 1));
+    pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam3 + (relojX * 3), relojX * 4);
+
+    pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 4, nuevoTam5 + (relojX * 4 + 1));
+    pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam5 + (relojX * 4), relojX * 5);
+
+    if (cambioDeMinuto > 0)
+    {
+      int pos = map(cambioDeMinuto,0,5000/intervaloPantalla,0,35);
+      if (pos > 28)
+      {
+        mostrarNumero((minutos/10),5,(1 - pos) + 28);
+        mostrarNumero((minutos%10),8,(1 - pos) + 28);
+        mostrarNumero((hora/10),(5 + pos) - 35,1);
+        mostrarNumero((hora%10),(8 - pos) + 35,1);
+      }else if (pos < 7){
+        mostrarNumero((minutos/10),5,(1 + pos) - 7);
+        mostrarNumero((minutos%10),8,(1 + pos) - 7);
+        mostrarNumero((hora/10),(5 - pos),1);
+        mostrarNumero((hora%10),(8 + pos),1);
+      }else{
+        mostrarNumero((minutos/10),5,1);
+        mostrarNumero((minutos%10),8,1);
+      }
+    }else{
+      mostrarNumero((hora/10),5,1);
+      mostrarNumero((hora%10),8,1);
+    }
+    pixelsReloj.show();
+  }
+
 }
 //-----------------------------------efecto llenar tira -----------------------------------------
 void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
@@ -717,6 +807,18 @@ void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
     ledLlenar++;
     if (ledLlenar > numLeds)
     {
+      miPixelsE.setPixelColor(numLeds - 4, rojoE/16, verdeE/16, azulE/16);
+      miPixelsE.setPixelColor(numLeds - 3, rojoE/16, verdeE/16, azulE/16);
+      miPixelsE.setPixelColor(numLeds - 2, rojoE/16, verdeE/16, azulE/16);
+      miPixelsE.setPixelColor(numLeds - 1, rojoE/16, verdeE/16, azulE/16);
+
+      miPixelsG.setPixelColor(numLeds - 4, rojoG/16, verdeG/16, azulG/16);
+      miPixelsG.setPixelColor(numLeds - 3, rojoG/16, verdeG/16, azulG/16);
+      miPixelsG.setPixelColor(numLeds - 2, rojoG/16, verdeG/16, azulG/16);
+      miPixelsG.setPixelColor(numLeds - 1, rojoG/16, verdeG/16, azulG/16);
+
+      miPixelsE.show();
+
       ledLlenar = 0;
     }
     tiempoPrevioLlenar = millis();
@@ -886,6 +988,14 @@ void VerificarMensaje(String Mensaje)
   int cont = 0;
   String temp;
   //codigo oculto
+  if (Mensaje.indexOf("reloj") >= 0)
+  {
+    if(encenderReloj == 0){
+      encenderReloj = 1;
+    }else{
+      encenderReloj = 0;
+    }
+  }
   if (Mensaje.indexOf("apagarFoco") >= 0)
   {
     estadoRele = 0;
@@ -1108,30 +1218,6 @@ void VerificarMensaje(String Mensaje)
   }
 }
 
-
-//------------------------------------------mostrar numero en pantalla --------------
-void mostrarNumero(int num, int x, int y) {
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 3; j++) {
-      if (num0_9[num][i][j] == 1) {
-        pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
-      }
-    }
-  }
-}
-
-//------------------------------------------mostrar logo en pantalla --------------
-void mostrarLogo(int num, int x, int y) {
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 3; j++) {
-      if (logo[num][i][j] == 1) {
-        pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
-      }
-    }
-  }
-}
-
-
 //------------------------------------------loop----------------------------------
 
 void loop(){
@@ -1189,15 +1275,39 @@ void loop(){
   tiempoActualPantalla = millis();
   if (tiempoActualPantalla - tiempoPrevioPantalla > intervaloPantalla)
   {
-    pixelsReloj.clear();
-    if (encenderE == 1 || encenderG == 1 || estadoRele == 1)
+    if (encenderReloj == 1)
     {
       if (notificacion == 0)
       {
         int porcentajeMinutos = map(minutos,0,60,0,numLedsReloj);
-        for (int i = 0; i <= porcentajeMinutos; i++)
+        if (!((encenderE == 1 && (estadoE == 1 || estadoE == 2)) || (encenderG == 1 && (estadoG == 1 || estadoG == 2))))
         {
-          pixelsReloj.setPixelColor(i, rojoG, verdeG, azulG);
+          pixelsReloj.fill(pixelsG.Color(rojoG, verdeG, azulG), 0, porcentajeMinutos);
+          pixelsReloj.fill(pixelsG.Color(0, 0, 0), porcentajeMinutos, numLedsReloj);
+          if (cambioDeMinuto > 0)
+          {
+            int pos = map(cambioDeMinuto,0,5000/intervaloPantalla,0,35);
+            if (pos > 28)
+            {
+              mostrarNumero((minutos/10),5,(1 - pos) + 28);
+              mostrarNumero((minutos%10),8,(1 - pos) + 28);
+              mostrarNumero((hora/10),(5 + pos) - 35,1);
+              mostrarNumero((hora%10),(8 - pos) + 35,1);
+            }else if (pos < 7){
+              mostrarNumero((minutos/10),5,(1 + pos) - 7);
+              mostrarNumero((minutos%10),8,(1 + pos) - 7);
+              mostrarNumero((hora/10),(5 - pos),1);
+              mostrarNumero((hora%10),(8 + pos),1);
+            }else{
+              mostrarNumero((minutos/10),5,1);
+              mostrarNumero((minutos%10),8,1);
+            }
+            
+            cambioDeMinuto -= 1;
+          }else{
+            mostrarNumero((hora/10),5,1);
+            mostrarNumero((hora%10),8,1);
+          }
         }
       }else{
         switch (numLogo){
@@ -1248,6 +1358,8 @@ void loop(){
         }
         mostrarLogo(numLogo,1,1);
         mostrarLogo(numLogo,12,1);
+        mostrarNumero((hora/10),5,1);
+        mostrarNumero((hora%10),8,1);
 
         if (notificacion == 1){
           encenderE = encendidoETemp;
@@ -1264,10 +1376,9 @@ void loop(){
         //reducir notificacion 
         notificacion -= 1;
       }
-      
-      
-      mostrarNumero((hora/10),5,1);
-      mostrarNumero((hora%10),8,1);
+    }
+    else{
+      pixelsReloj.clear();
     }
     pixelsReloj.show();
     tiempoPrevioPantalla = millis();
@@ -1355,65 +1466,66 @@ void loop(){
   }
 
   // leer estado de los botones
-  int botonEstado1 = digitalRead(boton1); // encender y apagar tira 1 x
-  int botonEstado2 = digitalRead(boton2); // encender y apagar tira 2 x
-  int botonEstado3 = digitalRead(boton3); // encender y apagar rele x
-  int botonEstado4 = digitalRead(boton4); // encender todo x
-  int botonEstado5 = digitalRead(boton5); // cambiar efecto 2 x
-  int botonEstado6 = digitalRead(boton6); // cambiar efecto 1 x 
-  int botonEstado7 = digitalRead(boton7); // apagar todo x
+  int btnEstado1 = touchRead(T9);
+  int btnEstado2 = touchRead(T8);
+  int btnEstado3 = touchRead(T7);
+  int btnEstado4 = touchRead(T6);
+  int btnEstado5 = touchRead(T5);
+  int btnEstado6 = touchRead(T4);
+  int btnEstado7 = touchRead(T3);
+
 
   // realizar acciones en función del estado de los botones
-  if (botonEstado1 == HIGH)
+  if (btnEstado1 < botonLimite)
   {
     encedeApagarTiraG();
     Serial.println("Botón tira 1!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado2 == HIGH)
+  if (btnEstado2 < botonLimite)
   {
     encedeApagarTiraE();
     Serial.println("Botón tira 2!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado3 == HIGH)
+  if (btnEstado3 < botonLimite)
   {
     encedeApagarFoco();
     Serial.println("Botón rele!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado4 == HIGH)
+  if (btnEstado4 < botonLimite)
   {
     encenderG = 1;
     encenderE = 1;
     estadoRele = 1;
     Serial.println("Botón encender todo!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado5 == HIGH)
+  if (btnEstado5 < botonLimite)
   {
     cambiarEfectoE();
     Serial.println("Botón cambiar efecto tira 2!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado6 == HIGH)
+  if (btnEstado6 < botonLimite)
   {
     cambiarEfectoG();
     Serial.println("Botón cambiar efecto tira 1!");
-    delay(500);
+    delay(250);
   }
 
-  if (botonEstado7 == HIGH)
+  if (btnEstado7 < botonLimite)
   {
     encenderG = 0;
     encenderE = 0;
     estadoRele = 0;
     Serial.println("Botón apagar todo!");
-    delay(500);
+    delay(250);
   }
 }

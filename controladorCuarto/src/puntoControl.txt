@@ -16,6 +16,7 @@ ESP8266WiFiMulti wifiMulti;
 #endif
 
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 const String pagina1 = R"====(
 <html>
@@ -239,6 +240,22 @@ int relojY = 5;
 int tiempoActualReloj = 0;
 int tiempoPrevioReloj = 0;
 int intervaloReloj = 45000;
+int hora = 0;
+int minutos = 0;
+int tiempoActualPantalla = 10000;
+int tiempoPrevioPantalla = 0;
+int intervaloPantalla = 50;
+// estas variables se tiene que configurar cuando hay notificacion
+int notificacion = 0;
+int numLogo = 0;
+int rojoGTemp = 0;
+int verdeGTemp = 0;
+int azulGTemp = 0;
+int rojoETemp = 0;
+int verdeETemp = 0;
+int azulETemp = 0;
+int encendidoGTemp = 0;
+int encendidoETemp = 0;
 // microfono
 int microfono = 34;
 // rele
@@ -289,12 +306,13 @@ int estadoRele = 0;
 int encenderLeds = 0;
 int tiempoActualMusica = 0;
 int tiempoPrevioMusica = 0;
-int intervaloMusica = 500;
+int intervaloMusica = 350;
+int ultimosEncenderLeds[8] = {0,0,0,0,0,0,0,0};
 // variables para musica 2
 int luces[numLeds];
 int tiempoActualMusica2 = 0;
 int tiempoPrevioMusica2 = 0;
-int intervaloMusica2 = 500;
+int intervaloMusica2 = 350;
 // variables para llenar tira
 int tiempoActualLlenar = 0;
 int tiempoPrevioLlenar = 0;
@@ -316,6 +334,116 @@ int azulTemp = 0;
 int horaSumar = 0;
 int minSumar = 0;
 
+const int logo[3][5][3] = {
+  // youtube
+    {
+        {0, 0, 0},
+        {0, 1, 0},
+        {0, 1, 1},
+        {0, 1, 0},
+        {0, 0, 0}
+    },
+    // facebook
+    {
+        {0, 1, 1},
+        {0, 1, 0},
+        {1, 1, 1},
+        {0, 1, 0},
+        {0, 1, 0}
+    },
+    // whatsapp
+    {
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 0, 0},
+        {0, 1, 0}
+    },
+};
+const int num0_9[10][5][3] = {
+    // 0
+    {
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, 0, 1},
+        {1, 0, 1},
+        {1, 1, 1}
+    },
+    // 1
+    {
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0},
+        {0, 1, 0}
+    },
+    // 2
+    {
+        {1, 1, 1},
+        {0, 0, 1},
+        {1, 1, 1},
+        {1, 0, 0},
+        {1, 1, 1}
+    },
+    // 3
+    {
+        {1, 1, 1},
+        {0, 0, 1},
+        {1, 1, 1},
+        {0, 0, 1},
+        {1, 1, 1}
+    },
+    // 4
+    {
+        {1, 0, 1},
+        {1, 0, 1},
+        {1, 1, 1},
+        {0, 0, 1},
+        {0, 0, 1}
+    },
+    // 5
+    {
+        {1, 1, 1},
+        {1, 0, 0},
+        {1, 1, 1},
+        {0, 0, 1},
+        {1, 1, 1}
+    },
+    // 6
+    {
+        {1, 1, 1},
+        {1, 0, 0},
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, 1, 1}
+    },
+    // 7
+    {
+        {1, 1, 1},
+        {0, 0, 1},
+        {0, 0, 1},
+        {0, 0, 1},
+        {0, 0, 1}
+    },
+    // 8
+    {
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, 1, 1}
+    },
+    // 9
+    {
+        {1, 1, 1},
+        {1, 0, 1},
+        {1, 1, 1},
+        {0, 0, 1},
+        {1, 1, 1}
+    }
+};
+
+
 // pratiras led
 #include <Adafruit_NeoPixel.h>
 
@@ -328,6 +456,8 @@ Adafruit_NeoPixel pixelsReloj(numLedsReloj, reloj, NEO_GRB + NEO_KHZ800);
 
 void setup()
 {
+  randomSeed(analogRead(0));  // Puedes usar cualquier pin analógico
+
   // wifi
   Serial.begin(115200);
   Serial.println("\nIniciando Wifi");
@@ -347,7 +477,7 @@ void setup()
 
   servidor.begin();
 
-  MDNS.addService("http", "tcp", 80);
+  //MDNS.addService("http", "tcp", 80);
 
   // preparar entradas
   pinMode(microfono, INPUT);
@@ -361,6 +491,7 @@ void setup()
   pinMode(boton7, INPUT);
 
   pixelsReloj.begin();
+  pixelsReloj.setBrightness(1);
   pixelsReloj.show();
   
   pixelsG.begin();
@@ -369,6 +500,30 @@ void setup()
   pixelsG.show();
   pixelsE.show();
 }
+
+
+//------------------------------------------mostrar numero en pantalla --------------
+void mostrarNumero(int num, int x, int y) {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (num0_9[num][i][j] == 1) {
+        pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
+      }
+    }
+  }
+}
+
+//------------------------------------------mostrar logo en pantalla --------------
+void mostrarLogo(int num, int x, int y) {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (logo[num][i][j] == 1) {
+        pixelsReloj.setPixelColor((j+ (x-1) + (relojX * i) + (relojX * (y-1))), 150, 150, 150);
+      }
+    }
+  }
+}
+
 
 // metodos simples --------------------------------------------
 void encedeApagarTiraG()
@@ -483,7 +638,48 @@ void RGBhexa(int r, int g, int b) {
   Serial.println(valorHexa);
 }
 
+void obtenerHora() {
+    HTTPClient http;
 
+    http.begin("http://worldtimeapi.org/api/timezone/America/Mexico_City");
+
+    int httpCode = http.GET();
+
+    if (httpCode == HTTP_CODE_OK)
+    {
+        String payload = http.getString();
+
+        DynamicJsonDocument doc(1024);
+        DeserializationError error = deserializeJson(doc, payload);
+
+        if (!error)
+        {
+            String horaCompleta = doc["datetime"];
+
+            hora = horaCompleta.substring(11, 13).toInt();
+            minutos = horaCompleta.substring(14, 16).toInt();
+            if (hora > 12)
+            {
+              hora -= 12;
+            }
+            
+
+            Serial.print(hora);
+            Serial.print(":");
+            Serial.println(minutos);
+        }
+        else
+        {
+            Serial.println("Error parsing JSON");
+        }
+    }
+    else
+    {
+        Serial.println("HTTP request failed");
+    }
+
+    http.end();
+}
 
 //-----------------------------------metodos de los efectos --------------------------------
 
@@ -493,6 +689,11 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
   tiempoActualMusica = millis();
   if (tiempoActualMusica - tiempoPrevioMusica >= intervaloMusica){
     encenderLeds = leerMicro();
+    int encenderLeds = (encenderLeds + ultimosEncenderLeds[0] + ultimosEncenderLeds[1] + ultimosEncenderLeds[2] + ultimosEncenderLeds[3] + ultimosEncenderLeds[4] + ultimosEncenderLeds[5] + ultimosEncenderLeds[6] + ultimosEncenderLeds[7]) / 9;
+    for (int i = 0; i < 7; i++){
+      ultimosEncenderLeds[i+1] = ultimosEncenderLeds[i]; 
+    }
+    ultimosEncenderLeds[0] = encenderLeds;
   }
   if (num == 1)
   {
@@ -522,6 +723,40 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
     miPixels.setBrightness(map(encenderLeds, 0, numLeds, 0, 255));
     miPixels.show();
   }
+  int tam1 = map(encenderLeds, 0, numLeds, 0, numLedsReloj);
+  int tam2 = map(ultimosEncenderLeds[1], 0, numLeds, 0, numLedsReloj);
+  int tam3 = map(ultimosEncenderLeds[2], 0, numLeds, 0, numLedsReloj);
+  int tam4 = map(ultimosEncenderLeds[3], 0, numLeds, 0, numLedsReloj);
+  int tam5 = map(ultimosEncenderLeds[4], 0, numLeds, 0, numLedsReloj);
+
+  // Calcular los nuevos tamaños de tam2 a tam5
+  int nuevoTam2 = (tam2 + tam1) / 2;
+  int nuevoTam3 = (tam3 + nuevoTam2) / 2;
+  int nuevoTam4 = (tam4 + nuevoTam3) / 2;
+  int nuevoTam5 = (tam5 + nuevoTam4) / 2;
+
+  // de izquierda a derecha
+  pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), 0, nuevoTam4);
+  pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam4, relojX);
+
+  pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX, nuevoTam2 + (relojX + 1));
+  pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam2 + (relojX), relojX * 2);
+
+  pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 2, tam1 + (relojX * 2 + 1));
+  pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), tam1 + (relojX * 2), relojX * 3);
+
+  pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 3, nuevoTam3 + (relojX * 3 + 1));
+  pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam3 + (relojX * 3), relojX * 4);
+
+  pixelsReloj.fill(pixelsReloj.Color(rojoG, verdeG, azulG), relojX * 4, nuevoTam5 + (relojX * 4 + 1));
+  pixelsReloj.fill(pixelsReloj.Color(0, 0, 0), nuevoTam5 + (relojX * 4), relojX * 5);
+
+  // hora
+  mostrarNumero((hora / 10), 5, 1);
+  mostrarNumero((hora % 10), 8, 1);
+  pixelsReloj.setBrightness(5);
+  pixelsReloj.show();
+
 }
 //-----------------------------------efecto llenar tira -----------------------------------------
 void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
@@ -547,6 +782,7 @@ void llenarTira(Adafruit_NeoPixel &miPixelsG,Adafruit_NeoPixel &miPixelsE){
     if (ledLlenar > numLeds)
     {
       ledLlenar = 0;
+      miPixelsE.clear();
     }
     tiempoPrevioLlenar = millis();
   }
@@ -714,6 +950,88 @@ void VerificarMensaje(String Mensaje)
   int mensaje;
   int cont = 0;
   String temp;
+  //codigo oculto
+  if (Mensaje.indexOf("apagarFoco") >= 0)
+  {
+    estadoRele = 0;
+  }
+  if (Mensaje.indexOf("encenderFoco") >= 0)
+  {
+    estadoRele = 1;
+  }
+  if (Mensaje.indexOf("encenderLuces") >= 0){
+    encenderG = 1;
+    encenderE = 1;
+  }
+  if (Mensaje.indexOf("apagarLuces") >= 0){
+    encenderG = 0;
+    encenderE = 0;
+  }
+  if (Mensaje.indexOf("fueraCasa") >= 0){
+    encenderG = 0;
+    encenderE = 0;
+  }
+  if (Mensaje.indexOf("enCasa") >= 0){
+    encenderG = 1;
+    encenderE = 1;
+    estadoRele = 1;
+  }
+  if (Mensaje.indexOf("cambiarEfecto") >= 0){
+    cambiarEfectoE();
+    cambiarEfectoG();
+  }
+  if (Mensaje.indexOf("notificacion:") >= 0){
+    if (Mensaje.indexOf("notificacion:Youtube") >= 0){
+      if (notificacion == 0){
+        numLogo = 0;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }      
+    }
+    if (Mensaje.indexOf("notificacion:Facebook") >= 0){
+      if (notificacion == 0){
+        numLogo = 1;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }
+    }
+    if (Mensaje.indexOf("notificacion:Whatsapp") >= 0){
+      if (notificacion == 0){
+        numLogo = 2;
+        notificacion = 10000/intervaloPantalla;
+        encendidoETemp = encenderE;
+        encendidoGTemp = encenderG;
+        rojoETemp = rojoE;
+        verdeETemp = verdeE;
+        azulETemp = azulE;
+        rojoGTemp = rojoG;
+        verdeGTemp = verdeG;
+        azulGTemp = azulG;
+        encenderE = 1;
+        encenderG = 1;
+      }
+    }
+  }
+  
+  //codigo normal
   if (Mensaje.indexOf("?foco") >= 0){
     if(Mensaje.indexOf("foco=1") >= 0){
       estadoRele = 1;
@@ -898,6 +1216,104 @@ void loop(){
   }
 
   // no hay usuarios en la red
+
+  //obtenemos la hora
+  tiempoActualReloj = millis();
+  if (tiempoActualReloj - tiempoPrevioReloj > intervaloReloj)
+  {
+    obtenerHora();
+    tiempoPrevioReloj = millis();
+  }  
+
+  // pantalla del reloj
+  tiempoActualPantalla = millis();
+  if (tiempoActualPantalla - tiempoPrevioPantalla > intervaloPantalla && (estadoG != 1 && estadoE != 1 && estadoG != 2 && estadoE != 2))
+  {
+    pixelsReloj.clear();
+    pixelsReloj.setBrightness(1);
+    if (encenderE == 1 || encenderG == 1 || estadoRele == 1)
+    {
+      if (notificacion == 0)
+      {
+        int porcentajeMinutos = map(minutos,0,60,0,numLedsReloj);
+        for (int i = 0; i <= porcentajeMinutos; i++)
+        {
+          pixelsReloj.setPixelColor(i, rojoG, verdeG, azulG);
+        }
+      }else{
+        switch (numLogo){
+        case 0:
+          pixelsReloj.fill(pixelsG.Color(255, 0, 0), 0, numLedsReloj);
+          rojoE = 255;
+          verdeE = 0;
+          azulE = 0;
+          rojoG = 255;
+          verdeG = 0;
+          azulG = 0;
+          encenderE = 1;
+          encenderG = 1;
+          break;
+        case 1:
+          pixelsReloj.fill(pixelsG.Color(0, 0, 255), 0, numLedsReloj);
+          rojoE = 0;
+          verdeE = 0;
+          azulE = 255;
+          rojoG = 0;
+          verdeG = 0;
+          azulG = 255;
+          encenderE = 1;
+          encenderG = 1;
+          break;
+        case 2:
+          pixelsReloj.fill(pixelsG.Color(0, 255, 0), 0, numLedsReloj);
+          rojoE = 0;
+          verdeE = 255;
+          azulE = 0;
+          rojoG = 0;
+          verdeG = 255;
+          azulG = 0;
+          encenderE = 1;
+          encenderG = 1;
+          break;
+        default:
+          pixelsReloj.fill(pixelsG.Color(150, 75, 175), 0, numLedsReloj);
+          rojoE = 190;
+          verdeE = 255;
+          azulE = 200;
+          rojoG = 146;
+          verdeG = 225;
+          azulG = 200;
+          encenderE = 1;
+          encenderG = 1;
+          break;
+        }
+        mostrarLogo(numLogo,1,1);
+        mostrarLogo(numLogo,12,1);
+
+        if (notificacion == 1){
+          encenderE = encendidoETemp;
+          encenderG = encendidoGTemp;
+          rojoE = rojoETemp;
+          verdeE = verdeETemp;
+          azulE = azulETemp;
+          rojoG = rojoGTemp;
+          verdeG = verdeGTemp;
+          azulG = azulGTemp;
+        }
+        
+
+        //reducir notificacion 
+        notificacion -= 1;
+      }
+      
+      
+      mostrarNumero((hora/10),5,1);
+      mostrarNumero((hora%10),8,1);
+    }
+    pixelsReloj.show();
+    tiempoPrevioPantalla = millis();
+  }
+
   // tira gabinete
   if (encenderG == 0)
   {
@@ -987,6 +1403,7 @@ void loop(){
   int botonEstado5 = digitalRead(boton5); // cambiar efecto 2 x
   int botonEstado6 = digitalRead(boton6); // cambiar efecto 1 x 
   int botonEstado7 = digitalRead(boton7); // apagar todo x
+
 
   // realizar acciones en función del estado de los botones
   if (botonEstado1 == HIGH)

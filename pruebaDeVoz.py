@@ -1,25 +1,18 @@
-import pyttsx3
+# mi api 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
+import openai
 
-# Inicializar el motor de síntesis de voz
-engine = pyttsx3.init()
+openai.api_key = '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'
 
-# Obtener la lista de voces disponibles
-voices = engine.getProperty('voices')
+def enviar_mensaje(mensaje):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "eres un asistente virtual personal"},
+            {"role": "user", "content": mensaje},
+        ]
+    )
+    return response.choices[0].message.content
 
-# Enumerar las voces disponibles
-for voice in voices:
-    print("Id: %s" % voice.id)
-    print("Nombre: %s" % voice.name)
-    print("Idioma: %s" % voice.languages)
-    print("")
-
-# Seleccionar una voz específica (por índice)
-selected_voice_index = 0
-engine.setProperty('voice', voices[selected_voice_index].id)
-
-# Ejemplo de texto a sintetizar
-texto = "Hola, esta es una prueba de síntesis de voz"
-
-# Sintetizar y reproducir el texto con la voz seleccionada
-engine.say(texto)
-engine.runAndWait()
+mensaje = "de la lista cuales es el mejor para algoritmos geneticos"
+respuesta = enviar_mensaje(mensaje)
+print(respuesta)

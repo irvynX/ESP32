@@ -11,9 +11,10 @@ Relé:
     Pin de control: GPIO 5
 
 Botones táctiles:
-    Botón táctil 1: GPIO 0
-    Botón táctil 2: GPIO 2
-    Botón táctil 3: GPIO 5
-    Botón táctil 4: GPIO 12
-    Botón táctil 5: GPIO 13
-    Botón táctil 6: GPIO 15
+    Botón táctil 1: GPIO 32 - touch9 // encender y apagar tira 1 x
+    Botón táctil 2: GPIO 33 - touch8 // encender y apagar tira 2 x
+    Botón táctil 3: GPIO 27 - touch7 // encender y apagar rele x
+    Botón táctil 4: GPIO 14 - touch6 // encender todo x
+    Botón táctil 5: GPIO 12 - touch5 // cambiar efecto 2 x
+    Botón táctil 6: GPIO 13 - touch4 // cambiar efecto 1 x 
+    Botón táctil 7: GPIO 15 - touch3 // apagar todo x

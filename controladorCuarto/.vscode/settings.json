@@ -1,3 +1,8 @@
 {
-    "cmake.sourceDirectory": "C:/Users/irvyn/OneDrive/Documents/PlatformIO/Projects/ESP32/controladorCuarto/.pio/libdeps/esp32doit-devkit-v1/Unity"
+    "cmake.sourceDirectory": "C:/Users/irvyn/OneDrive/Documents/PlatformIO/Projects/ESP32/controladorCuarto/.pio/libdeps/esp32doit-devkit-v1/Unity",
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "array": "cpp",
+        "*.tcc": "cpp"
+    }
 }
