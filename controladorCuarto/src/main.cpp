@@ -459,18 +459,17 @@ Adafruit_NeoPixel pixelsG(numLeds, tira1, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel pixelsE(numLeds, tira2, NEO_GRB + NEO_KHZ800);
 // reloj
 Adafruit_NeoPixel pixelsReloj(numLedsReloj, reloj, NEO_GRB + NEO_KHZ800);
-
-void setup()
-{
-  randomSeed(analogRead(0));  // Puedes usar cualquier pin analógico
-
-  // wifi
-  Serial.begin(115200);
+IPAddress staticIP(192, 168, 1, 100);  // La IP estática que deseas asignar
+IPAddress gateway(192, 168, 1, 254);    // Dirección IP del gateway
+IPAddress subnet(255, 255, 255, 0);   // Máscara de subred
+void wifi(){
   Serial.println("\nIniciando Wifi");
 
-  wifiMulti.addAP("Totalplay-2DA1-2", "irvyn2703");
+  wifiMulti.addAP("cuartoRed", "irvyn2703");
+  wifiMulti.addAP("Totalplay-2DA1", "irvyn2703");
 
   WiFi.mode(WIFI_STA);
+  //WiFi.config(staticIP, gateway, subnet);
   Serial.print("Conectando a Wifi ..");
   while (wifiMulti.run(TiempoEsperaWifi) != WL_CONNECTED)
   {
@@ -479,8 +478,22 @@ void setup()
   Serial.print("SSID:");
   Serial.print(WiFi.SSID());
   Serial.print(" ID:");
-  Serial.println(WiFi.localIP());
+  Serial.print(WiFi.localIP());
+  Serial.print(" gateway:");
+  Serial.print(WiFi.gatewayIP());
+  Serial.print(" mascara:");
+  Serial.println(WiFi.subnetMask());
+  Serial.print(" macAddress:");
+  Serial.println(WiFi.macAddress());  
+}
 
+void setup()
+{
+  randomSeed(analogRead(0));  // Puedes usar cualquier pin analógico
+
+  // wifi
+  Serial.begin(115200);
+  wifi();
   servidor.begin();
 
   //MDNS.addService("http", "tcp", 80);
@@ -666,7 +679,7 @@ void obtenerHora() {
               hora -= 12;
             }
             if (tempMinutos != minutos){
-              cambioDeMinuto = 5000/intervaloPantalla;
+              cambioDeMinuto = 10000/intervaloPantalla;
               tempMinutos = minutos;
             }
 
@@ -760,7 +773,7 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
 
     if (cambioDeMinuto > 0)
     {
-      int pos = map(cambioDeMinuto,0,5000/intervaloPantalla,0,35);
+      int pos = map(cambioDeMinuto,0,10000/intervaloPantalla,0,35);
       if (pos > 28)
       {
         mostrarNumero((minutos/10),5,(1 - pos) + 28);
@@ -776,10 +789,13 @@ void efectoMusica(Adafruit_NeoPixel &miPixels, int num)
         mostrarNumero((minutos/10),5,1);
         mostrarNumero((minutos%10),8,1);
       }
+      
+      cambioDeMinuto -= 1;
     }else{
       mostrarNumero((hora/10),5,1);
       mostrarNumero((hora%10),8,1);
     }
+    pixelsReloj.setBrightness(3);
     pixelsReloj.show();
   }
 
@@ -1221,6 +1237,10 @@ void VerificarMensaje(String Mensaje)
 //------------------------------------------loop----------------------------------
 
 void loop(){
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Conexión WiFi perdida. Intentando reconexión...");
+    WiFi.reconnect();
+  }
   WiFiClient cliente = servidor.available();
   // usuario en la pagina web
   if (cliente)
@@ -1281,12 +1301,12 @@ void loop(){
       {
         int porcentajeMinutos = map(minutos,0,60,0,numLedsReloj);
         if (!((encenderE == 1 && (estadoE == 1 || estadoE == 2)) || (encenderG == 1 && (estadoG == 1 || estadoG == 2))))
-        {
+        { 
           pixelsReloj.fill(pixelsG.Color(rojoG, verdeG, azulG), 0, porcentajeMinutos);
           pixelsReloj.fill(pixelsG.Color(0, 0, 0), porcentajeMinutos, numLedsReloj);
           if (cambioDeMinuto > 0)
           {
-            int pos = map(cambioDeMinuto,0,5000/intervaloPantalla,0,35);
+            int pos = map(cambioDeMinuto,0,10000/intervaloPantalla,0,35);
             if (pos > 28)
             {
               mostrarNumero((minutos/10),5,(1 - pos) + 28);
@@ -1303,7 +1323,7 @@ void loop(){
               mostrarNumero((minutos%10),8,1);
             }
             
-            cambioDeMinuto -= 1;
+            cambioDeMinuto -= 2;
           }else{
             mostrarNumero((hora/10),5,1);
             mostrarNumero((hora%10),8,1);
@@ -1380,6 +1400,7 @@ void loop(){
     else{
       pixelsReloj.clear();
     }
+    pixelsReloj.setBrightness(1);
     pixelsReloj.show();
     tiempoPrevioPantalla = millis();
   }
@@ -1476,6 +1497,7 @@ void loop(){
 
 
   // realizar acciones en función del estado de los botones
+  /*
   if (btnEstado1 < botonLimite)
   {
     encedeApagarTiraG();
@@ -1528,4 +1550,5 @@ void loop(){
     Serial.println("Botón apagar todo!");
     delay(250);
   }
+  */
 }
